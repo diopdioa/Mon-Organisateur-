@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Organisateur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">📊 Mon Organisateur</h1>
+                <div id="syncStatus" class="text-sm">⚡ Chargement...</div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-slate-200 sticky top-0">
+            <div class="max-w-7xl mx-auto px-4 flex gap-4">
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600" data-tab="tableau">📈 Tableau</button>
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600" data-tab="objectifs">🎯 Objectifs</button>
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600" data-tab="taches">✅ Tâches</button>
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600" data-tab="habitudes">🔥 Habitudes</button>
+            </div>
+        </nav>
+
+        <!-- Contenu -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Tableau de bord -->
+            <section id="tableau" class="tab-content">
+                <div class="grid grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Objectifs</div>
+                        <div class="text-3xl font-bold text-blue-600" id="countObj">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Tâches</div>
+                        <div class="text-3xl font-bold text-green-600" id="countTache">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Habitudes</div>
+                        <div class="text-3xl font-bold text-yellow-600" id="countHab">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Synchronisé</div>
+                        <div class="text-2xl" id="syncCheck">✅</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Objectifs -->
+            <section id="objectifs" class="tab-content hidden">
+                <div class="flex justify-between mb-6">
+                    <h2 class="text-2xl font-bold">🎯 Objectifs</h2>
+                    <button id="addObjBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Ajouter</button>
+                </div>
+                <div id="objList" class="space-y-3"></div>
+            </section>
+
+            <!-- Tâches -->
+            <section id="taches" class="tab-content hidden">
+                <div class="flex justify-between mb-6">
+                    <h2 class="text-2xl font-bold">✅ Tâches</h2>
+                    <button id="addTacheBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Ajouter</button>
+                </div>
+                <div id="tacheList" class="space-y-3"></div>
+            </section>
+
+            <!-- Habitudes -->
+            <section id="habitudes" class="tab-content hidden">
+                <div class="flex justify-between mb-6">
+                    <h2 class="text-2xl font-bold">🔥 Habitudes</h2>
+                    <button id="addHabBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Ajouter</button>
+                </div>
+                <div id="habList" class="space-y-3"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modales -->
+    <div id="objModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Ajouter un objectif</h3>
+            <input type="text" id="objTitre" placeholder="Titre" class="w-full p-2 border rounded mb-3">
+            <textarea id="objDesc" placeholder="Description" class="w-full p-2 border rounded mb-3 h-20"></textarea>
+            <div class="flex gap-2">
+                <button id="saveObjBtn" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Enregistrer</button>
+                <button class="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400" onclick="document.getElementById('objModal').classList.add('hidden')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tacheModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Ajouter une tâche</h3>
+            <input type="text" id="tacheTitre" placeholder="Titre" class="w-full p-2 border rounded mb-3">
+            <textarea id="tacheDesc" placeholder="Description" class="w-full p-2 border rounded mb-3 h-20"></textarea>
+            <div class="flex gap-2">
+                <button id="saveTacheBtn" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Enregistrer</button>
+                <button class="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400" onclick="document.getElementById('tacheModal').classList.add('hidden')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="habModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full">
+            <h3 class="text-xl font-bold mb-4">Ajouter une habitude</h3>
+            <input type="text" id="habNom" placeholder="Nom" class="w-full p-2 border rounded mb-3">
+            <div class="flex gap-2">
+                <button id="saveHabBtn" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Enregistrer</button>
+                <button class="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400" onclick="document.getElementById('habModal').classList.add('hidden')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://azqgdgxneymeyrbjgiqo.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_kWWqcZptq5Qbtf3dAuiEcQ_ggOyL3ye';
+        
+        let db = null;
+        let mois = new Date().toISOString().slice(0, 7);
+
+        // Initialisation
+        async function init() {
+            try {
+                const { createClient } = window.supabase;
+                db = createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase OK');
+                updateSync('✅ Synchronisé');
+                loadData();
+            } catch (e) {
+                console.error('❌ Erreur:', e);
+                updateSync('❌ Erreur');
+            }
+        }
+
+        function updateSync(txt) {
+            document.getElementById('syncStatus').textContent = txt;
+        }
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('border-blue-600', 'text-blue-600', 'border-b-2'));
+                btn.classList.add('border-blue-600', 'text-blue-600', 'border-b-2');
+                
+                document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+                document.getElementById(btn.dataset.tab).classList.remove('hidden');
+            });
+        });
+
+        // Boutons modales
+        document.getElementById('addObjBtn').onclick = () => document.getElementById('objModal').classList.remove('hidden');
+        document.getElementById('addTacheBtn').onclick = () => document.getElementById('tacheModal').classList.remove('hidden');
+        document.getElementById('addHabBtn').onclick = () => document.getElementById('habModal').classList.remove('hidden');
+
+        // Ajouter objectif
+        document.getElementById('saveObjBtn').onclick = async () => {
+            const titre = document.getElementById('objTitre').value.trim();
+            if (!titre) { alert('Titre requis'); return; }
+            
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { error } = await db.from('objectifs').insert([{
+                    titre,
+                    description: document.getElementById('objDesc').value,
+                    mois_annee: mois,
+                    statut: 'en cours',
+                    progression: 0
+                }]);
+                if (error) throw error;
+                
+                document.getElementById('objModal').classList.add('hidden');
+                document.getElementById('objTitre').value = '';
+                document.getElementById('objDesc').value = '';
+                loadData();
+                updateSync('✅ Synchronisé');
+            } catch (e) {
+                console.error(e);
+                alert('Erreur: ' + e.message);
+                updateSync('❌ Erreur');
+            }
+        };
+
+        // Ajouter tâche
+        document.getElementById('saveTacheBtn').onclick = async () => {
+            const titre = document.getElementById('tacheTitre').value.trim();
+            if (!titre) { alert('Titre requis'); return; }
+            
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { error } = await db.from('taches').insert([{
+                    titre,
+                    description: document.getElementById('tacheDesc').value,
+                    mois_annee: mois,
+                    statut: 'a faire',
+                    priorite: 'moyenne'
+                }]);
+                if (error) throw error;
+                
+                document.getElementById('tacheModal').classList.add('hidden');
+                document.getElementById('tacheTitre').value = '';
+                document.getElementById('tacheDesc').value = '';
+                loadData();
+                updateSync('✅ Synchronisé');
+            } catch (e) {
+                console.error(e);
+                alert('Erreur: ' + e.message);
+                updateSync('❌ Erreur');
+            }
+        };
+
+        // Ajouter habitude
+        document.getElementById('saveHabBtn').onclick = async () => {
+            const nom = document.getElementById('habNom').value.trim();
+            if (!nom) { alert('Nom requis'); return; }
+            
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { error } = await db.from('habitudes').insert([{
+                    nom,
+                    frequence: 'quotidien',
+                    jours_completes: 0
+                }]);
+                if (error) throw error;
+                
+                document.getElementById('habModal').classList.add('hidden');
+                document.getElementById('habNom').value = '';
+                loadData();
+                updateSync('✅ Synchronisé');
+            } catch (e) {
+                console.error(e);
+                alert('Erreur: ' + e.message);
+                updateSync('❌ Erreur');
+            }
+        };
+
+        // Charger données
+        async function loadData() {
+            try {
+                const [objRes, tacheRes, habRes] = await Promise.all([
+                    db.from('objectifs').select('*').eq('mois_annee', mois),
+                    db.from('taches').select('*').eq('mois_annee', mois),
+                    db.from('habitudes').select('*')
+                ]);
+
+                const objectifs = objRes.data || [];
+                const taches = tacheRes.data || [];
+                const habitudes = habRes.data || [];
+
+                document.getElementById('countObj').textContent = objectifs.length;
+                document.getElementById('countTache').textContent = taches.filter(t => t.statut !== 'complete').length;
+                document.getElementById('countHab').textContent = habitudes.length;
+
+                // Afficher objectifs
+                document.getElementById('objList').innerHTML = objectifs.length ? objectifs.map(o => `
+                    <div class="bg-white p-4 rounded shadow">
+                        <h3 class="font-bold">${o.titre}</h3>
+                        <p class="text-sm text-gray-600">${o.description || ''}</p>
+                        <div class="mt-3">
+                            <input type="range" min="0" max="100" value="${o.progression}" 
+                                onchange="updateObj('${o.id}', this.value)" class="w-full">
+                            <span class="text-xs text-gray-500">${o.progression}%</span>
+                        </div>
+                        <button onclick="deleteObj('${o.id}')" class="text-red-600 text-sm mt-2">Supprimer</button>
+                    </div>
+                `).join('') : '<p class="text-gray-500 text-center py-8">Aucun objectif</p>';
+
+                // Afficher tâches
+                document.getElementById('tacheList').innerHTML = taches.length ? taches.map(t => `
+                    <div class="bg-white p-4 rounded shadow border-l-4 ${t.priorite === 'haute' ? 'border-red-600' : 'border-blue-600'}">
+                        <h3 class="font-bold">${t.titre}</h3>
+                        <p class="text-sm text-gray-600">${t.description || ''}</p>
+                        <button onclick="toggleTache('${t.id}', '${t.statut}')" class="text-sm mt-2 px-3 py-1 rounded ${t.statut === 'complete' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}">
+                            ${t.statut === 'complete' ? '✓ Complétée' : 'À faire'}
+                        </button>
+                        <button onclick="deleteTache('${t.id}')" class="text-red-600 text-sm ml-2">Supprimer</button>
+                    </div>
+                `).join('') : '<p class="text-gray-500 text-center py-8">Aucune tâche</p>';
+
+                // Afficher habitudes
+                document.getElementById('habList').innerHTML = habitudes.length ? habitudes.map(h => `
+                    <div class="bg-white p-4 rounded shadow">
+                        <h3 class="font-bold">${h.nom}</h3>
+                        <p class="text-sm text-gray-600">Jours complétés: ${h.jours_completes}</p>
+                        <button onclick="completeHab('${h.id}')" class="text-2xl mt-2">🔥</button>
+                        <button onclick="deleteHab('${h.id}')" class="text-red-600 text-sm ml-2">Supprimer</button>
+                    </div>
+                `).join('') : '<p class="text-gray-500 text-center py-8">Aucune habitude</p>';
+
+            } catch (e) {
+                console.error('Erreur chargement:', e);
+            }
+        }
+
+        // Actions
+        async function updateObj(id, val) {
+            try {
+                await db.from('objectifs').update({ progression: parseInt(val) }).eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteObj(id) {
+            if (!confirm('Supprimer ?')) return;
+            try {
+                await db.from('objectifs').delete().eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function toggleTache(id, statut) {
+            try {
+                await db.from('taches').update({ statut: statut === 'a faire' ? 'complete' : 'a faire' }).eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteTache(id) {
+            if (!confirm('Supprimer ?')) return;
+            try {
+                await db.from('taches').delete().eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function completeHab(id) {
+            try {
+                const hab = (await db.from('habitudes').select('jours_completes').eq('id', id)).data[0];
+                await db.from('habitudes').update({ jours_completes: (hab.jours_completes || 0) + 1 }).eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteHab(id) {
+            if (!confirm('Supprimer ?')) return;
+            try {
+                await db.from('habitudes').delete().eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        // Démarrer
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
