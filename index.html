@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Mon Organisateur">
+    <meta name="theme-color" content="#6366f1">
+    <title>Mon Organisateur - Gestion Personnelle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="gradient-bg text-white sticky top-0 z-40 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📊</span>
+                    <h1 class="text-xl font-bold">Mon Organisateur</h1>
+                </div>
+                <button id="syncBtn" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition">
+                    <span id="syncStatus">⚡ Synchronisé</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-white border-b border-slate-200 sticky top-16 z-30">
+            <div class="max-w-7xl mx-auto px-4 flex gap-2 overflow-x-auto">
+                <button class="tab-btn active px-4 py-3 border-b-2 border-indigo-600 text-indigo-600 font-medium" data-tab="tableau-bord">
+                    📈 Tableau de bord
+                </button>
+                <button class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900" data-tab="objectifs">
+                    🎯 Objectifs
+                </button>
+                <button class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900" data-tab="taches">
+                    ✅ Tâches
+                </button>
+                <button class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900" data-tab="habitudes">
+                    🔥 Habitudes
+                </button>
+                <button class="tab-btn px-4 py-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900" data-tab="notes">
+                    📝 Notes
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Tableau de bord -->
+            <section id="tableau-bord" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
+                        <div class="text-slate-600 text-sm font-medium mb-2">Objectifs</div>
+                        <div class="text-3xl font-bold text-indigo-600" id="countObjectifs">0</div>
+                        <div class="text-slate-500 text-xs mt-2">Ce mois</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
+                        <div class="text-slate-600 text-sm font-medium mb-2">Tâches</div>
+                        <div class="text-3xl font-bold text-blue-600" id="countTaches">0</div>
+                        <div class="text-slate-500 text-xs mt-2">À faire</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
+                        <div class="text-slate-600 text-sm font-medium mb-2">Habitudes</div>
+                        <div class="text-3xl font-bold text-green-600" id="countHabitudes">0</div>
+                        <div class="text-slate-500 text-xs mt-2">Actives</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-sm card-hover">
+                        <div class="text-slate-600 text-sm font-medium mb-2">Notes</div>
+                        <div class="text-3xl font-bold text-purple-600" id="countNotes">0</div>
+                        <div class="text-slate-500 text-xs mt-2">Total</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Objectifs -->
+            <section id="objectifs" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">🎯 Objectifs</h2>
+                    <button id="addObjectifBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        + Ajouter
+                    </button>
+                </div>
+                <div id="objectifsList" class="space-y-3"></div>
+            </section>
+
+            <!-- Tâches -->
+            <section id="taches" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">✅ Tâches</h2>
+                    <button id="addTacheBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        + Ajouter
+                    </button>
+                </div>
+                <div id="tachesList" class="space-y-3"></div>
+            </section>
+
+            <!-- Habitudes -->
+            <section id="habitudes" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">🔥 Habitudes</h2>
+                    <button id="addHabitudeBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        + Ajouter
+                    </button>
+                </div>
+                <div id="habitudesList" class="space-y-3"></div>
+            </section>
+
+            <!-- Notes -->
+            <section id="notes" class="tab-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">📝 Notes</h2>
+                    <button id="addNoteBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+                        + Ajouter
+                    </button>
+                </div>
+                <div id="notesList" class="space-y-3"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modales -->
+    <!-- Modal Objectif -->
+    <div id="objectifModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold mb-4">Ajouter un objectif</h3>
+            <input type="text" id="objectifTitre" placeholder="Titre" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3">
+            <textarea id="objectifDesc" placeholder="Description" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3 h-20"></textarea>
+            <div class="flex gap-2">
+                <button id="saveObjectifBtn" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Enregistrer</button>
+                <button class="flex-1 bg-slate-200 text-slate-900 py-2 rounded-lg hover:bg-slate-300 modal-close">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tâche -->
+    <div id="tacheModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold mb-4">Ajouter une tâche</h3>
+            <input type="text" id="tacheTitre" placeholder="Titre" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3">
+            <textarea id="tacheDesc" placeholder="Description" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3 h-20"></textarea>
+            <select id="tachePriorite" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3">
+                <option value="basse">Basse priorité</option>
+                <option value="moyenne" selected>Moyenne priorité</option>
+                <option value="haute">Haute priorité</option>
+            </select>
+            <div class="flex gap-2">
+                <button id="saveTacheBtn" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Enregistrer</button>
+                <button class="flex-1 bg-slate-200 text-slate-900 py-2 rounded-lg hover:bg-slate-300 modal-close">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Habitude -->
+    <div id="habitudeModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold mb-4">Ajouter une habitude</h3>
+            <input type="text" id="habitudeNom" placeholder="Nom de l'habitude" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3">
+            <select id="habitudeFrequence" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3">
+                <option value="quotidien">Quotidienne</option>
+                <option value="hebdomadaire">Hebdomadaire</option>
+                <option value="mensuel">Mensuelle</option>
+            </select>
+            <div class="flex gap-2">
+                <button id="saveHabitudeBtn" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Enregistrer</button>
+                <button class="flex-1 bg-slate-200 text-slate-900 py-2 rounded-lg hover:bg-slate-300 modal-close">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Note -->
+    <div id="noteModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 class="text-xl font-bold mb-4">Ajouter une note</h3>
+            <input type="text" id="noteTitre" placeholder="Titre" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3">
+            <textarea id="noteContenu" placeholder="Contenu" class="w-full px-3 py-2 border border-slate-300 rounded-lg mb-3 h-32"></textarea>
+            <div class="flex gap-2">
+                <button id="saveNoteBtn" class="flex-1 bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700">Enregistrer</button>
+                <button class="flex-1 bg-slate-200 text-slate-900 py-2 rounded-lg hover:bg-slate-300 modal-close">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration Supabase
+        const SUPABASE_URL = 'https://azqgdgxneymeyrbjgiqo.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_kWWqcZptq5Qbtf3dAuiEcQ_ggOyL3ye';
+        
+        let currentMonth = new Date().toISOString().slice(0, 7);
+        let objectifsData = [];
+        let tachesData = [];
+        let habitudesData = [];
+        let notesData = [];
+
+        // Initialiser Supabase
+        async function initSupabase() {
+            try {
+                const { createClient } = window.supabase;
+                window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase initialisé avec succès');
+                updateSync('⚡ Chargement...');
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur Supabase:', error);
+                updateSync('❌ Erreur connexion');
+            }
+        }
+
+        // Mettre à jour le statut sync
+        function updateSync(status) {
+            document.getElementById('syncStatus').textContent = status;
+        }
+
+        // Gestion des tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('border-indigo-600', 'text-indigo-600');
+                    b.classList.add('border-transparent', 'text-slate-600');
+                });
+                btn.classList.add('border-indigo-600', 'text-indigo-600');
+                btn.classList.remove('border-transparent', 'text-slate-600');
+
+                const tabId = btn.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+                document.getElementById(tabId).classList.remove('hidden');
+            });
+        });
+
+        // Fermer modales
+        document.querySelectorAll('.modal-close').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.target.closest('[id*="Modal"]').classList.add('hidden');
+            });
+        });
+
+        // === OBJECTIFS ===
+        document.getElementById('addObjectifBtn').addEventListener('click', () => {
+            document.getElementById('objectifModal').classList.remove('hidden');
+        });
+
+        document.getElementById('saveObjectifBtn').addEventListener('click', async () => {
+            const titre = document.getElementById('objectifTitre').value.trim();
+            const desc = document.getElementById('objectifDesc').value.trim();
+
+            if (!titre) {
+                alert('Veuillez entrer un titre');
+                return;
+            }
+
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { data, error } = await supabase
+                    .from('objectifs')
+                    .insert([{ 
+                        titre, 
+                        description: desc, 
+                        mois_annee: currentMonth,
+                        statut: 'en cours',
+                        progression: 0
+                    }]);
+                
+                if (error) throw error;
+                
+                document.getElementById('objectifModal').classList.add('hidden');
+                document.getElementById('objectifTitre').value = '';
+                document.getElementById('objectifDesc').value = '';
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                alert('Erreur lors de l\'enregistrement: ' + error.message);
+                updateSync('❌ Erreur');
+            }
+        });
+
+        // === TÂCHES ===
+        document.getElementById('addTacheBtn').addEventListener('click', () => {
+            document.getElementById('tacheModal').classList.remove('hidden');
+        });
+
+        document.getElementById('saveTacheBtn').addEventListener('click', async () => {
+            const titre = document.getElementById('tacheTitre').value.trim();
+            const desc = document.getElementById('tacheDesc').value.trim();
+            const priorite = document.getElementById('tachePriorite').value;
+
+            if (!titre) {
+                alert('Veuillez entrer un titre');
+                return;
+            }
+
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { data, error } = await supabase
+                    .from('taches')
+                    .insert([{ 
+                        titre, 
+                        description: desc,
+                        priorite,
+                        mois_annee: currentMonth,
+                        statut: 'a faire'
+                    }]);
+                
+                if (error) throw error;
+                
+                document.getElementById('tacheModal').classList.add('hidden');
+                document.getElementById('tacheTitre').value = '';
+                document.getElementById('tacheDesc').value = '';
+                document.getElementById('tachePriorite').value = 'moyenne';
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                alert('Erreur lors de l\'enregistrement: ' + error.message);
+                updateSync('❌ Erreur');
+            }
+        });
+
+        // === HABITUDES ===
+        document.getElementById('addHabitudeBtn').addEventListener('click', () => {
+            document.getElementById('habitudeModal').classList.remove('hidden');
+        });
+
+        document.getElementById('saveHabitudeBtn').addEventListener('click', async () => {
+            const nom = document.getElementById('habitudeNom').value.trim();
+            const frequence = document.getElementById('habitudeFrequence').value;
+
+            if (!nom) {
+                alert('Veuillez entrer un nom');
+                return;
+            }
+
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { data, error } = await supabase
+                    .from('habitudes')
+                    .insert([{ 
+                        nom,
+                        frequence,
+                        jours_completes: 0
+                    }]);
+                
+                if (error) throw error;
+                
+                document.getElementById('habitudeModal').classList.add('hidden');
+                document.getElementById('habitudeNom').value = '';
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                alert('Erreur lors de l\'enregistrement: ' + error.message);
+                updateSync('❌ Erreur');
+            }
+        });
+
+        // === NOTES ===
+        document.getElementById('addNoteBtn').addEventListener('click', () => {
+            document.getElementById('noteModal').classList.remove('hidden');
+        });
+
+        document.getElementById('saveNoteBtn').addEventListener('click', async () => {
+            const titre = document.getElementById('noteTitre').value.trim();
+            const contenu = document.getElementById('noteContenu').value.trim();
+
+            if (!titre || !contenu) {
+                alert('Veuillez remplir les champs');
+                return;
+            }
+
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { data, error } = await supabase
+                    .from('notes')
+                    .insert([{ titre, contenu }]);
+                
+                if (error) throw error;
+                
+                document.getElementById('noteModal').classList.add('hidden');
+                document.getElementById('noteTitre').value = '';
+                document.getElementById('noteContenu').value = '';
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                alert('Erreur lors de l\'enregistrement: ' + error.message);
+                updateSync('❌ Erreur');
+            }
+        });
+
+        // === CHARGER LES DONNÉES ===
+        async function loadData() {
+            try {
+                // Récupérer tous les données EN MÊME TEMPS
+                const [objResult, tacheResult, habResult, noteResult] = await Promise.all([
+                    window.supabaseClient.from('objectifs').select('*').eq('mois_annee', currentMonth),
+                    window.supabaseClient.from('taches').select('*').eq('mois_annee', currentMonth),
+                    window.supabaseClient.from('habitudes').select('*'),
+                    window.supabaseClient.from('notes').select('*')
+                ]);
+
+                // Traiter les erreurs
+                if (objResult.error) throw objResult.error;
+                if (tacheResult.error) throw tacheResult.error;
+                if (habResult.error) throw habResult.error;
+                if (noteResult.error) throw noteResult.error;
+
+                // Stocker les données
+                objectifsData = objResult.data || [];
+                tachesData = tacheResult.data || [];
+                habitudesData = habResult.data || [];
+                notesData = noteResult.data || [];
+
+                console.log('📊 Données chargées:', {
+                    objectifs: objectifsData.length,
+                    taches: tachesData.length,
+                    habitudes: habitudesData.length,
+                    notes: notesData.length
+                });
+
+                updateUI();
+                updateStats();
+            } catch (error) {
+                console.error('❌ Erreur chargement:', error);
+                alert('Erreur lors du chargement des données: ' + error.message);
+            }
+        }
+
+        // === METTRE À JOUR L'UI ===
+        function updateUI() {
+            // Objectifs
+            const objList = document.getElementById('objectifsList');
+            if (objectifsData.length === 0) {
+                objList.innerHTML = '<div class="text-slate-500 text-center py-8">Aucun objectif. Commencez par en ajouter un ! 🚀</div>';
+            } else {
+                objList.innerHTML = objectifsData.map(obj => `
+                    <div class="bg-white rounded-lg p-4 shadow-sm card-hover border-l-4 border-indigo-600">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-slate-900">${obj.titre}</h3>
+                            <button class="text-red-600 hover:text-red-700" onclick="deleteObjectif('${obj.id}')">✕</button>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-3">${obj.description || ''}</p>
+                        <div class="w-full bg-slate-200 rounded-full h-2 mb-2">
+                            <div class="bg-indigo-600 h-2 rounded-full" style="width: ${obj.progression}%"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-slate-500">${obj.progression}%</span>
+                            <input type="range" min="0" max="100" value="${obj.progression}" 
+                                onchange="updateObjectifProgression('${obj.id}', this.value)" 
+                                class="flex-1 mx-3">
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Tâches
+            const tacheList = document.getElementById('tachesList');
+            if (tachesData.length === 0) {
+                tacheList.innerHTML = '<div class="text-slate-500 text-center py-8">Aucune tâche. Créez-en une pour commencer ! ✨</div>';
+            } else {
+                tacheList.innerHTML = tachesData.map(t => `
+                    <div class="bg-white rounded-lg p-4 shadow-sm card-hover border-l-4 ${
+                        t.priorite === 'haute' ? 'border-red-600' : 
+                        t.priorite === 'moyenne' ? 'border-yellow-600' : 
+                        'border-green-600'
+                    }">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1">
+                                <h3 class="font-bold text-slate-900">${t.titre}</h3>
+                                <p class="text-sm text-slate-600">${t.description || ''}</p>
+                            </div>
+                            <button class="text-red-600 hover:text-red-700 ml-2" onclick="deleteTache('${t.id}')">✕</button>
+                        </div>
+                        <div class="flex gap-2 mt-3">
+                            <button onclick="toggleTache('${t.id}', '${t.statut}')" class="text-xs px-3 py-1 rounded ${
+                                t.statut === 'complete' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'
+                            }">
+                                ${t.statut === 'complete' ? '✓ Complétée' : 'À faire'}
+                            </button>
+                            <span class="text-xs px-2 py-1 rounded ${
+                                t.priorite === 'haute' ? 'bg-red-100 text-red-700' :
+                                t.priorite === 'moyenne' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-green-100 text-green-700'
+                            }">
+                                ${t.priorite.charAt(0).toUpperCase() + t.priorite.slice(1)}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Habitudes
+            const habList = document.getElementById('habitudesList');
+            if (habitudesData.length === 0) {
+                habList.innerHTML = '<div class="text-slate-500 text-center py-8">Aucune habitude. Commencez une habitude ! 🔥</div>';
+            } else {
+                habList.innerHTML = habitudesData.map(h => `
+                    <div class="bg-white rounded-lg p-4 shadow-sm card-hover border-l-4 border-green-600">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-slate-900">${h.nom}</h3>
+                            <button class="text-red-600 hover:text-red-700" onclick="deleteHabitude('${h.id}')">✕</button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-slate-600">${h.frequence}</span>
+                            <button onclick="completeHabitude('${h.id}')" class="text-2xl hover:scale-110 transition">
+                                🔥
+                            </button>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-2">${h.jours_completes} jours complétés</div>
+                    </div>
+                `).join('');
+            }
+
+            // Notes
+            const noteList = document.getElementById('notesList');
+            if (notesData.length === 0) {
+                noteList.innerHTML = '<div class="text-slate-500 text-center py-8">Aucune note. Écrivez votre première note ! 📝</div>';
+            } else {
+                noteList.innerHTML = notesData.map(n => `
+                    <div class="bg-white rounded-lg p-4 shadow-sm card-hover border-l-4 border-purple-600">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-bold text-slate-900">${n.titre}</h3>
+                            <button class="text-red-600 hover:text-red-700" onclick="deleteNote('${n.id}')">✕</button>
+                        </div>
+                        <p class="text-sm text-slate-600">${n.contenu}</p>
+                        <div class="text-xs text-slate-400 mt-2">
+                            ${new Date(n.created_at).toLocaleDateString('fr-FR')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // === METTRE À JOUR LES STATISTIQUES ===
+        function updateStats() {
+            document.getElementById('countObjectifs').textContent = objectifsData.length;
+            document.getElementById('countTaches').textContent = tachesData.filter(t => t.statut !== 'complete').length;
+            document.getElementById('countHabitudes').textContent = habitudesData.length;
+            document.getElementById('countNotes').textContent = notesData.length;
+        }
+
+        // === FONCTIONS DE SUPPRESSION ===
+        async function deleteObjectif(id) {
+            if (!confirm('Êtes-vous sûr ?')) return;
+            try {
+                updateSync('⚡ Suppression...');
+                const { error } = await window.supabaseClient.from('objectifs').delete().eq('id', id);
+                if (error) throw error;
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                updateSync('❌ Erreur');
+            }
+        }
+
+        async function deleteTache(id) {
+            if (!confirm('Êtes-vous sûr ?')) return;
+            try {
+                updateSync('⚡ Suppression...');
+                const { error } = await window.supabaseClient.from('taches').delete().eq('id', id);
+                if (error) throw error;
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                updateSync('❌ Erreur');
+            }
+        }
+
+        async function deleteHabitude(id) {
+            if (!confirm('Êtes-vous sûr ?')) return;
+            try {
+                updateSync('⚡ Suppression...');
+                const { error } = await window.supabaseClient.from('habitudes').delete().eq('id', id);
+                if (error) throw error;
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                updateSync('❌ Erreur');
+            }
+        }
+
+        async function deleteNote(id) {
+            if (!confirm('Êtes-vous sûr ?')) return;
+            try {
+                updateSync('⚡ Suppression...');
+                const { error } = await window.supabaseClient.from('notes').delete().eq('id', id);
+                if (error) throw error;
+                await loadData();
+                updateSync('✅ Synchronisé');
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+                updateSync('❌ Erreur');
+            }
+        }
+
+        // === MISE À JOUR OBJECTIF PROGRESSION ===
+        async function updateObjectifProgression(id, progression) {
+            try {
+                const { error } = await supabase
+                    .from('objectifs')
+                    .update({ progression: parseInt(progression) })
+                    .eq('id', id);
+                if (error) throw error;
+                await loadData();
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+            }
+        }
+
+        // === TOGGLE TÂCHE ===
+        async function toggleTache(id, currentStatus) {
+            try {
+                const newStatus = currentStatus === 'a faire' ? 'complete' : 'a faire';
+                const { error } = await supabase
+                    .from('taches')
+                    .update({ statut: newStatus })
+                    .eq('id', id);
+                if (error) throw error;
+                await loadData();
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+            }
+        }
+
+        // === COMPLÉTER HABITUDE ===
+        async function completeHabitude(id) {
+            try {
+                const habit = habitudesData.find(h => h.id === id);
+                if (!habit) return;
+                
+                const newCount = (habit.jours_completes || 0) + 1;
+                const { error } = await supabase
+                    .from('habitudes')
+                    .update({ jours_completes: newCount })
+                    .eq('id', id);
+                if (error) throw error;
+                await loadData();
+            } catch (error) {
+                console.error('❌ Erreur:', error);
+            }
+        }
+
+        // Initialiser au chargement
+        window.addEventListener('load', initSupabase);
+    </script>
+</body>
+</html>
