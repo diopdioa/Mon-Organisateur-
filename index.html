@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mon Organiseur">
+<title>Mon Organiseur</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--text:#172033;--muted:#6b7280;--p:#4f46e5;--p2:#7c3aed;--border:#e5e7eb;--ok:#16a34a;--danger:#dc2626}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);padding-bottom:90px}
+button,input,select,textarea{font:inherit}button{border:0;cursor:pointer}.app{max-width:1050px;margin:auto;padding:14px}
+header{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-radius:24px;padding:22px;box-shadow:0 10px 30px #18204418;margin-bottom:14px}
+.top{display:flex;justify-content:space-between;gap:12px;align-items:center}h1{margin:0;font-size:28px}.sub{opacity:.85;font-size:14px}.month{display:flex;gap:8px;margin-top:18px}.month button,.install{background:#ffffff25;color:#fff;padding:10px 13px;border-radius:11px}.month select{background:#fff;color:#111827;border:0;border-radius:11px;padding:10px;font-weight:700;flex:1}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.full{grid-column:1/-1}.card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:17px;box-shadow:0 8px 25px #1820440c}.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.head h2{font-size:17px;margin:0}.add{background:var(--p);color:#fff;border-radius:10px;padding:9px 12px;font-weight:700}
+.progress-bg{height:11px;background:#eef0f5;border-radius:99px;overflow:hidden}.progress{height:100%;width:0;background:linear-gradient(90deg,var(--p),var(--p2));transition:.25s}
+.list{display:flex;flex-direction:column;gap:8px;margin:12px 0}.item{display:flex;align-items:center;gap:9px;border:1px solid var(--border);padding:10px;border-radius:13px}.item.done .label{text-decoration:line-through;color:var(--muted)}.label{flex:1;word-break:break-word}.actions{display:flex;gap:5px}.small{background:#f1f2f6;color:var(--text);padding:7px 8px;border-radius:8px}.danger{color:var(--danger)}.form{display:flex;gap:7px}.form input,.notes textarea,.modal input,.modal select{width:100%;border:1px solid var(--border);border-radius:11px;padding:11px;background:#fff;color:var(--text);outline:none}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat{background:#f8f9fc;border-radius:13px;padding:12px;text-align:center}.stat strong{font-size:21px;display:block}.stat span{font-size:11px;color:var(--muted)}.badge{font-size:11px;padding:4px 7px;border-radius:99px;background:#eef0ff;color:var(--p)}.notes textarea{min-height:120px;resize:vertical}.empty{text-align:center;color:var(--muted);padding:12px}
+.modal{position:fixed;inset:0;background:#11182780;display:none;align-items:flex-end;justify-content:center;z-index:100}.modal.open{display:flex}.sheet{background:#fff;width:min(560px,100%);border-radius:24px 24px 0 0;padding:20px;max-height:90vh;overflow:auto}.row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:10px 0}.modal h3{margin:0 0 4px}.modal label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}.modal .save{width:100%;background:var(--p);color:#fff;padding:12px;border-radius:12px;font-weight:700}.close{float:right;background:#f1f2f6;border-radius:9px;padding:7px}
+.installHint{font-size:12px;opacity:.9;margin-top:8px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}.stats{grid-template-columns:repeat(2,1fr)}.top{align-items:flex-start}.app{padding:10px}header{border-radius:20px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="top">
+  <div><h1>Mon Organiseur</h1><div class="sub">Mes objectifs, tâches, rappels et progression.</div></div>
+  <button class="install" id="installBtn" style="display:none">📲 Installer</button>
+ </div>
+ <div class="month"><button id="prev">‹</button><select id="monthSelect"></select><button id="next">›</button></div>
+ <div class="installHint" id="iosHint">Sur iPhone : Safari → Partager → Ajouter à l’écran d’accueil.</div>
+</header>
+
+<div class="grid">
+<section class="card">
+ <div class="head"><h2>🎯 Objectifs du mois</h2><span id="goalPercent">0%</span></div>
+ <div class="progress-bg"><div class="progress" id="goalProgress"></div></div>
+ <div id="goals" class="list"></div>
+ <div class="form"><input id="goalInput" placeholder="Ajouter un objectif…"><button class="add" id="addGoal">+</button></div>
+</section>
+
+<section class="card">
+ <div class="head"><h2>✅ Tâches</h2><span id="taskPercent">0%</span></div>
+ <div class="progress-bg"><div class="progress" id="taskProgress"></div></div>
+ <div id="tasks" class="list"></div>
+ <div class="form"><input id="taskInput" placeholder="Ajouter une tâche…"><button class="add" id="addTask">+</button></div>
+</section>
+
+<section class="card full">
+ <div class="head"><h2>📊 Résumé</h2><button class="small" id="reset">Réinitialiser le mois</button></div>
+ <div class="stats">
+  <div class="stat"><strong id="totalGoals">0</strong><span>Objectifs</span></div>
+  <div class="stat"><strong id="totalTasks">0</strong><span>Tâches</span></div>
+  <div class="stat"><strong id="completed">0</strong><span>Terminés</span></div>
+  <div class="stat"><strong id="reminders">0</strong><span>Rappels</span></div>
+ </div>
+</section>
+
+<section class="card">
+ <div class="head"><h2>🔥 Habitudes</h2><button class="add" id="addHabit">+ Ajouter</button></div>
+ <div id="habits" class="list"></div>
+</section>
+
+<section class="card notes">
+ <div class="head"><h2>📝 Notes</h2></div>
+ <textarea id="notes" placeholder="Ton bilan, tes idées, tes rappels…"></textarea>
+</section>
+</div>
+<footer style="text-align:center;color:#6b7280;font-size:12px;padding:20px">Données enregistrées automatiquement sur cet appareil.</footer>
+</div>
+
+<div class="modal" id="modal">
+ <div class="sheet">
+  <button class="close" id="close">✕</button>
+  <h3>🔔 Rappel de la tâche</h3>
+  <p id="modalTask" style="color:#6b7280;margin-top:4px"></p>
+  <div class="row">
+   <div><label>Date</label><input type="date" id="remDate"></div>
+   <div><label>Heure</label><input type="time" id="remTime"></div>
+  </div>
+  <div style="margin:10px 0"><label>Répétition</label>
+   <select id="repeat"><option value="none">Aucune</option><option value="daily">Tous les jours</option><option value="weekly">Chaque semaine</option><option value="monthly">Chaque mois</option></select>
+  </div>
+  <button class="save" id="saveReminder">Activer le rappel</button>
+  <button class="small" id="removeReminder" style="width:100%;margin-top:8px">Désactiver le rappel</button>
+ </div>
+</div>
+
+<script>
+const months=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+let current=new Date(), data=JSON.parse(localStorage.getItem("organiseurFinal")||"{}"), reminderId=null;
+const $=id=>document.getElementById(id), uid=()=>Date.now()+Math.random().toString(16).slice(2);
+function key(){return `${current.getFullYear()}-${String(current.getMonth()+1).padStart(2,"0")}`}
+function md(){const k=key();if(!data[k])data[k]={goals:[],tasks:[],habits:["Sport","Lecture","Étude / formation"],habitDone:{},notes:""};return data[k]}
+function save(){localStorage.setItem("organiseurFinal",JSON.stringify(data))}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function renderSelect(){let s=$("monthSelect");s.innerHTML="";for(let y=current.getFullYear()-2;y<=current.getFullYear()+2;y++)for(let m=0;m<12;m++){let o=document.createElement("option");o.value=`${y}-${m}`;o.textContent=`${months[m]} ${y}`;s.appendChild(o)}s.value=`${current.getFullYear()}-${current.getMonth()}`}
+function render(){
+ renderSelect();let d=md();$("notes").value=d.notes||"";
+ renderList("goals");renderList("tasks");renderHabits();
+ let gd=d.goals.filter(x=>x.done).length,td=d.tasks.filter(x=>x.done).length;
+ let gp=d.goals.length?Math.round(gd/d.goals.length*100):0,tp=d.tasks.length?Math.round(td/d.tasks.length*100):0;
+ $("goalPercent").textContent=gp+"%";$("goalProgress").style.width=gp+"%";$("taskPercent").textContent=tp+"%";$("taskProgress").style.width=tp+"%";
+ $("totalGoals").textContent=d.goals.length;$("totalTasks").textContent=d.tasks.length;$("completed").textContent=gd+td;$("reminders").textContent=d.tasks.filter(x=>x.reminder).length;
+}
+function renderList(type){
+ let box=$(type),d=md();box.innerHTML="";
+ if(!d[type].length){box.innerHTML='<div class="empty">Aucun élément pour le moment.</div>';return}
+ d[type].forEach(x=>{let el=document.createElement("div");el.className="item "+(x.done?"done":"");
+ let reminder=x.reminder?`<span class="badge">🔔 ${x.reminder.date} ${x.reminder.time}</span>`:"";
+ el.innerHTML=`<input type="checkbox" ${x.done?"checked":""}><span class="label">${esc(x.text)}</span>${reminder}<div class="actions">${type==="tasks"?'<button class="small" title="Rappel">🔔</button>':""}<button class="small danger">🗑️</button></div>`;
+ el.querySelector("input").onchange=()=>{x.done=!x.done;save();render()};
+ if(type==="tasks")el.querySelector(".actions button:first-child").onclick=()=>openReminder(x);
+ el.querySelector(".danger").onclick=()=>{d[type]=d[type].filter(a=>a.id!==x.id);save();render()};box.appendChild(el)})
+}
+function renderHabits(){let d=md(),b=$("habits");b.innerHTML="";d.habits.forEach((h,i)=>{let el=document.createElement("div");el.className="item";el.innerHTML=`<input type="checkbox" ${d.habitDone[i]?"checked":""}><span class="label">${esc(h)}</span><button class="small danger">🗑️</button>`;el.querySelector("input").onchange=()=>{d.habitDone[i]=!d.habitDone[i];save();render()};el.querySelector(".danger").onclick=()=>{d.habits.splice(i,1);delete d.habitDone[i];save();render()};b.appendChild(el)})}
+function add(type,input){let v=$(input).value.trim();if(!v)return;md()[type].push({id:uid(),text:v,done:false});$(input).value="";save();render()}
+$("addGoal").onclick=()=>add("goals","goalInput");$("addTask").onclick=()=>add("tasks","taskInput");
+["goalInput","taskInput"].forEach(i=>$(i).addEventListener("keydown",e=>{if(e.key==="Enter")$(i==="goalInput"?"addGoal":"addTask").click()}));
+$("addHabit").onclick=()=>{let h=prompt("Nom de l'habitude :");if(h?.trim()){md().habits.push(h.trim());save();render()}};
+$("prev").onclick=()=>{current.setMonth(current.getMonth()-1);render()};$("next").onclick=()=>{current.setMonth(current.getMonth()+1);render()};
+$("monthSelect").onchange=e=>{let [y,m]=e.target.value.split("-").map(Number);current=new Date(y,m,1);render()};
+$("notes").oninput=e=>{md().notes=e.target.value;save()};
+$("reset").onclick=()=>{if(confirm("Réinitialiser toutes les données de ce mois ?")){delete data[key()];save();render()}};
+
+function openReminder(task){reminderId=task.id;$("modalTask").textContent=task.text;let r=task.reminder||{},now=new Date(),date=r.date||now.toISOString().slice(0,10),time=r.time||"09:00";$("remDate").value=date;$("remTime").value=time;$("repeat").value=r.repeat||"none";$("modal").classList.add("open")}
+$("close").onclick=()=>$("modal").classList.remove("open");
+$("modal").onclick=e=>{if(e.target===$("modal"))$("modal").classList.remove("open")};
+$("saveReminder").onclick=async()=>{let t=md().tasks.find(x=>x.id===reminderId);if(!t)return; if("Notification"in window){if(Notification.permission==="default")await Notification.requestPermission()}t.reminder={date:$("remDate").value,time:$("remTime").value,repeat:$("repeat").value};save();$("modal").classList.remove("open");render()};
+$("removeReminder").onclick=()=>{let t=md().tasks.find(x=>x.id===reminderId);if(t)delete t.reminder;save();$("modal").classList.remove("open");render()};
+
+// In-page reminder fallback: checks while the app is open.
+setInterval(()=>{let now=new Date(),d=md(),ds=now.toISOString().slice(0,10),ts=now.toTimeString().slice(0,5);
+ d.tasks.forEach(t=>{if(!t.reminder||t.done||t._lastNotified===`${ds} ${ts}`)return;if(t.reminder.date===ds&&t.reminder.time===ts){t._lastNotified=`${ds} ${ts}`;save();if("Notification"in window&&Notification.permission==="granted")new Notification("Mon Organiseur",{body:t.text});else alert("🔔 Rappel : "+t.text);}})
+},30000);
+
+let deferredPrompt;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;$("installBtn").style.display="block"});$("installBtn").onclick=async()=>{if(deferredPrompt){deferredPrompt.prompt();deferredPrompt=null}};
+render();
+</script>
+</body></html>

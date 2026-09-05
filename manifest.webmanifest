@@ -1,0 +1,10 @@
+{
+  "name": "Mon Organiseur",
+  "short_name": "Organiseur",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#4f46e5",
+  "lang": "fr",
+  "description": "Organiseur personnel avec tâches, objectifs et rappels."
+}
