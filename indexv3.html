@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Organisateur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">📊 Mon Organisateur</h1>
+                <div id="syncStatus" class="text-sm">⚡ Chargement...</div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-white border-b border-slate-200 sticky top-0 z-10">
+            <div class="max-w-7xl mx-auto px-4 flex gap-4 overflow-x-auto">
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap" data-tab="tableau">📈 Tableau</button>
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap" data-tab="objectifs">🎯 Objectifs</button>
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap" data-tab="taches">✅ Tâches</button>
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap" data-tab="habitudes">🔥 Habitudes</button>
+                <button class="tab-btn py-3 px-4 font-medium border-b-2 border-transparent hover:text-blue-600 whitespace-nowrap" data-tab="projets">📁 Projets</button>
+            </div>
+        </nav>
+
+        <!-- Contenu -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <!-- Tableau de bord -->
+            <section id="tableau" class="tab-content">
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Objectifs</div>
+                        <div class="text-3xl font-bold text-blue-600" id="countObj">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Tâches</div>
+                        <div class="text-3xl font-bold text-green-600" id="countTache">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Habitudes</div>
+                        <div class="text-3xl font-bold text-yellow-600" id="countHab">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Projets</div>
+                        <div class="text-3xl font-bold text-purple-600" id="countProjet">0</div>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow">
+                        <div class="text-gray-600 text-sm">Synchronisé</div>
+                        <div class="text-2xl" id="syncCheck">✅</div>
+                    </div>
+                </div>
+
+                <!-- Aperçu des projets en bas du tableau de bord -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">📁 Projets en cours</h2>
+                        <button class="text-sm text-blue-600 hover:underline" onclick="document.querySelector('[data-tab=projets]').click()">Voir tout →</button>
+                    </div>
+                    <div id="dashProjetList" class="space-y-2"></div>
+                </div>
+            </section>
+
+            <!-- Objectifs -->
+            <section id="objectifs" class="tab-content hidden">
+                <div class="flex justify-between mb-6">
+                    <h2 class="text-2xl font-bold">🎯 Objectifs</h2>
+                    <button id="addObjBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Ajouter</button>
+                </div>
+                <div id="objList" class="space-y-3"></div>
+            </section>
+
+            <!-- Tâches -->
+            <section id="taches" class="tab-content hidden">
+                <div class="flex justify-between mb-6">
+                    <h2 class="text-2xl font-bold">✅ Tâches</h2>
+                    <button id="addTacheBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Ajouter</button>
+                </div>
+                <div id="tacheList" class="space-y-3"></div>
+            </section>
+
+            <!-- Habitudes -->
+            <section id="habitudes" class="tab-content hidden">
+                <div class="flex justify-between mb-6">
+                    <h2 class="text-2xl font-bold">🔥 Habitudes</h2>
+                    <button id="addHabBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Ajouter</button>
+                </div>
+                <div id="habList" class="space-y-3"></div>
+            </section>
+
+            <!-- Projets -->
+            <section id="projets" class="tab-content hidden">
+                <div class="flex justify-between mb-6">
+                    <h2 class="text-2xl font-bold">📁 Projets</h2>
+                    <button id="addProjetBtn" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">+ Ajouter</button>
+                </div>
+                <div id="projetList" class="space-y-4"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modales -->
+    <div id="objModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">Ajouter un objectif</h3>
+            <input type="text" id="objTitre" placeholder="Titre" class="w-full p-2 border rounded mb-3">
+            <textarea id="objDesc" placeholder="Description" class="w-full p-2 border rounded mb-3 h-20"></textarea>
+            <label class="block text-sm text-gray-600 mb-1">Date de début</label>
+            <input type="date" id="objDateDebut" class="w-full p-2 border rounded mb-3">
+            <label class="block text-sm text-gray-600 mb-1">Projet</label>
+            <select id="objProjet" class="w-full p-2 border rounded mb-3">
+                <option value="">Aucun projet</option>
+            </select>
+            <div class="flex gap-2">
+                <button id="saveObjBtn" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Enregistrer</button>
+                <button class="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400" onclick="document.getElementById('objModal').classList.add('hidden')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="tacheModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">Ajouter une tâche</h3>
+            <input type="text" id="tacheTitre" placeholder="Titre" class="w-full p-2 border rounded mb-3">
+            <textarea id="tacheDesc" placeholder="Description" class="w-full p-2 border rounded mb-3 h-20"></textarea>
+            <label class="block text-sm text-gray-600 mb-1">Date de début</label>
+            <input type="date" id="tacheDateDebut" class="w-full p-2 border rounded mb-3">
+            <label class="block text-sm text-gray-600 mb-1">Projet</label>
+            <select id="tacheProjet" class="w-full p-2 border rounded mb-3">
+                <option value="">Aucun projet</option>
+            </select>
+            <div class="flex gap-2">
+                <button id="saveTacheBtn" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Enregistrer</button>
+                <button class="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400" onclick="document.getElementById('tacheModal').classList.add('hidden')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="habModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">Ajouter une habitude</h3>
+            <input type="text" id="habNom" placeholder="Nom" class="w-full p-2 border rounded mb-3">
+            <label class="block text-sm text-gray-600 mb-1">Date de début</label>
+            <input type="date" id="habDateDebut" class="w-full p-2 border rounded mb-3">
+            <label class="block text-sm text-gray-600 mb-1">Projet</label>
+            <select id="habProjet" class="w-full p-2 border rounded mb-3">
+                <option value="">Aucun projet</option>
+            </select>
+            <div class="flex gap-2">
+                <button id="saveHabBtn" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Enregistrer</button>
+                <button class="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400" onclick="document.getElementById('habModal').classList.add('hidden')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="projetModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold mb-4">Ajouter un projet</h3>
+            <input type="text" id="projetNom" placeholder="Nom du projet" class="w-full p-2 border rounded mb-3">
+            <textarea id="projetDesc" placeholder="Description" class="w-full p-2 border rounded mb-3 h-20"></textarea>
+            <label class="block text-sm text-gray-600 mb-1">Date de début</label>
+            <input type="date" id="projetDateDebut" class="w-full p-2 border rounded mb-3">
+            <div class="flex gap-2">
+                <button id="saveProjetBtn" class="flex-1 bg-purple-600 text-white py-2 rounded hover:bg-purple-700">Enregistrer</button>
+                <button class="flex-1 bg-gray-300 py-2 rounded hover:bg-gray-400" onclick="document.getElementById('projetModal').classList.add('hidden')">Annuler</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://azqgdgxneymeyrbjgiqo.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_kWWqcZptq5Qbtf3dAuiEcQ_ggOyL3ye';
+
+        let db = null;
+        let mois = new Date().toISOString().slice(0, 7);
+        const today = new Date().toISOString().slice(0, 10);
+
+        // Initialisation
+        async function init() {
+            try {
+                const { createClient } = window.supabase;
+                db = createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('✅ Supabase OK');
+                updateSync('✅ Synchronisé');
+                // Pré-remplir les dates de début à aujourd'hui par défaut
+                ['objDateDebut','tacheDateDebut','habDateDebut','projetDateDebut'].forEach(id => {
+                    document.getElementById(id).value = today;
+                });
+                loadData();
+            } catch (e) {
+                console.error('❌ Erreur:', e);
+                updateSync('❌ Erreur');
+            }
+        }
+
+        function updateSync(txt) {
+            document.getElementById('syncStatus').textContent = txt;
+        }
+
+        function fmtDate(iso) {
+            if (!iso) return '';
+            const [y, m, d] = iso.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('border-blue-600', 'text-blue-600', 'border-b-2'));
+                btn.classList.add('border-blue-600', 'text-blue-600', 'border-b-2');
+
+                document.querySelectorAll('.tab-content').forEach(s => s.classList.add('hidden'));
+                document.getElementById(btn.dataset.tab).classList.remove('hidden');
+            });
+        });
+
+        // Boutons modales
+        document.getElementById('addObjBtn').onclick = () => document.getElementById('objModal').classList.remove('hidden');
+        document.getElementById('addTacheBtn').onclick = () => document.getElementById('tacheModal').classList.remove('hidden');
+        document.getElementById('addHabBtn').onclick = () => document.getElementById('habModal').classList.remove('hidden');
+        document.getElementById('addProjetBtn').onclick = () => document.getElementById('projetModal').classList.remove('hidden');
+
+        // Ajouter objectif
+        document.getElementById('saveObjBtn').onclick = async () => {
+            const titre = document.getElementById('objTitre').value.trim();
+            if (!titre) { alert('Titre requis'); return; }
+
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { error } = await db.from('objectifs').insert([{
+                    titre,
+                    description: document.getElementById('objDesc').value,
+                    mois_annee: mois,
+                    statut: 'en cours',
+                    progression: 0,
+                    date_debut: document.getElementById('objDateDebut').value || null,
+                    projet_id: document.getElementById('objProjet').value || null
+                }]);
+                if (error) throw error;
+
+                document.getElementById('objModal').classList.add('hidden');
+                document.getElementById('objTitre').value = '';
+                document.getElementById('objDesc').value = '';
+                loadData();
+                updateSync('✅ Synchronisé');
+            } catch (e) {
+                console.error(e);
+                alert('Erreur: ' + e.message);
+                updateSync('❌ Erreur');
+            }
+        };
+
+        // Ajouter tâche
+        document.getElementById('saveTacheBtn').onclick = async () => {
+            const titre = document.getElementById('tacheTitre').value.trim();
+            if (!titre) { alert('Titre requis'); return; }
+
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { error } = await db.from('taches').insert([{
+                    titre,
+                    description: document.getElementById('tacheDesc').value,
+                    mois_annee: mois,
+                    statut: 'a faire',
+                    priorite: 'moyenne',
+                    progression: 0,
+                    date_debut: document.getElementById('tacheDateDebut').value || null,
+                    projet_id: document.getElementById('tacheProjet').value || null
+                }]);
+                if (error) throw error;
+
+                document.getElementById('tacheModal').classList.add('hidden');
+                document.getElementById('tacheTitre').value = '';
+                document.getElementById('tacheDesc').value = '';
+                loadData();
+                updateSync('✅ Synchronisé');
+            } catch (e) {
+                console.error(e);
+                alert('Erreur: ' + e.message);
+                updateSync('❌ Erreur');
+            }
+        };
+
+        // Ajouter habitude
+        document.getElementById('saveHabBtn').onclick = async () => {
+            const nom = document.getElementById('habNom').value.trim();
+            if (!nom) { alert('Nom requis'); return; }
+
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { error } = await db.from('habitudes').insert([{
+                    nom,
+                    frequence: 'quotidien',
+                    jours_completes: 0,
+                    progression: 0,
+                    date_debut: document.getElementById('habDateDebut').value || null,
+                    projet_id: document.getElementById('habProjet').value || null
+                }]);
+                if (error) throw error;
+
+                document.getElementById('habModal').classList.add('hidden');
+                document.getElementById('habNom').value = '';
+                loadData();
+                updateSync('✅ Synchronisé');
+            } catch (e) {
+                console.error(e);
+                alert('Erreur: ' + e.message);
+                updateSync('❌ Erreur');
+            }
+        };
+
+        // Ajouter projet
+        document.getElementById('saveProjetBtn').onclick = async () => {
+            const nom = document.getElementById('projetNom').value.trim();
+            if (!nom) { alert('Nom requis'); return; }
+
+            try {
+                updateSync('⚡ Enregistrement...');
+                const { error } = await db.from('projets').insert([{
+                    nom,
+                    description: document.getElementById('projetDesc').value,
+                    date_debut: document.getElementById('projetDateDebut').value || null
+                }]);
+                if (error) throw error;
+
+                document.getElementById('projetModal').classList.add('hidden');
+                document.getElementById('projetNom').value = '';
+                document.getElementById('projetDesc').value = '';
+                loadData();
+                updateSync('✅ Synchronisé');
+            } catch (e) {
+                console.error(e);
+                alert('Erreur: ' + e.message);
+                updateSync('❌ Erreur');
+            }
+        };
+
+        // Charger données
+        async function loadData() {
+            try {
+                const [objRes, tacheRes, habRes, projetRes] = await Promise.all([
+                    db.from('objectifs').select('*').eq('mois_annee', mois),
+                    db.from('taches').select('*').eq('mois_annee', mois),
+                    db.from('habitudes').select('*'),
+                    db.from('projets').select('*').order('date_debut', { ascending: false })
+                ]);
+
+                const objectifs = objRes.data || [];
+                const taches = tacheRes.data || [];
+                const habitudes = habRes.data || [];
+                const projets = projetRes.data || [];
+
+                document.getElementById('countObj').textContent = objectifs.length;
+                document.getElementById('countTache').textContent = taches.filter(t => t.statut !== 'complete').length;
+                document.getElementById('countHab').textContent = habitudes.length;
+                document.getElementById('countProjet').textContent = projets.length;
+
+                // Remplir les listes déroulantes "Projet" dans les modales
+                const projetOptions = '<option value="">Aucun projet</option>' +
+                    projets.map(p => `<option value="${p.id}">${p.nom}</option>`).join('');
+                ['objProjet', 'tacheProjet', 'habProjet'].forEach(id => {
+                    const sel = document.getElementById(id);
+                    const current = sel.value;
+                    sel.innerHTML = projetOptions;
+                    sel.value = current;
+                });
+
+                const projetNom = (id) => {
+                    if (!id) return null;
+                    const p = projets.find(p => p.id === id);
+                    return p ? p.nom : null;
+                };
+
+                // Afficher objectifs
+                document.getElementById('objList').innerHTML = objectifs.length ? objectifs.map(o => `
+                    <div class="bg-white p-4 rounded shadow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold">${o.titre}</h3>
+                            ${projetNom(o.projet_id) ? `<span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">📁 ${projetNom(o.projet_id)}</span>` : ''}
+                        </div>
+                        <p class="text-sm text-gray-600">${o.description || ''}</p>
+                        ${o.date_debut ? `<p class="text-xs text-gray-400 mt-1">📅 Début : ${fmtDate(o.date_debut)}</p>` : ''}
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Progression</span><span>${o.progression}%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="${o.progression}"
+                                oninput="this.nextElementSibling.textContent=this.value+'%'"
+                                onchange="updateObj('${o.id}', this.value)" class="w-full">
+                        </div>
+                        <button onclick="deleteObj('${o.id}')" class="text-red-600 text-sm mt-2">Supprimer</button>
+                    </div>
+                `).join('') : '<p class="text-gray-500 text-center py-8">Aucun objectif</p>';
+
+                // Afficher tâches
+                document.getElementById('tacheList').innerHTML = taches.length ? taches.map(t => `
+                    <div class="bg-white p-4 rounded shadow border-l-4 ${t.priorite === 'haute' ? 'border-red-600' : 'border-blue-600'}">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold">${t.titre}</h3>
+                            ${projetNom(t.projet_id) ? `<span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">📁 ${projetNom(t.projet_id)}</span>` : ''}
+                        </div>
+                        <p class="text-sm text-gray-600">${t.description || ''}</p>
+                        ${t.date_debut ? `<p class="text-xs text-gray-400 mt-1">📅 Début : ${fmtDate(t.date_debut)}</p>` : ''}
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Progression</span><span>${t.progression || 0}%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="${t.progression || 0}"
+                                oninput="this.nextElementSibling.textContent=this.value+'%'"
+                                onchange="updateTacheProgression('${t.id}', this.value)" class="w-full">
+                        </div>
+                        <button onclick="toggleTache('${t.id}', '${t.statut}')" class="text-sm mt-2 px-3 py-1 rounded ${t.statut === 'complete' ? 'bg-green-100 text-green-700' : 'bg-gray-100'}">
+                            ${t.statut === 'complete' ? '✓ Complétée' : 'À faire'}
+                        </button>
+                        <button onclick="deleteTache('${t.id}')" class="text-red-600 text-sm ml-2">Supprimer</button>
+                    </div>
+                `).join('') : '<p class="text-gray-500 text-center py-8">Aucune tâche</p>';
+
+                // Afficher habitudes
+                document.getElementById('habList').innerHTML = habitudes.length ? habitudes.map(h => `
+                    <div class="bg-white p-4 rounded shadow">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold">${h.nom}</h3>
+                            ${projetNom(h.projet_id) ? `<span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">📁 ${projetNom(h.projet_id)}</span>` : ''}
+                        </div>
+                        <p class="text-sm text-gray-600">Jours complétés: ${h.jours_completes}</p>
+                        ${h.date_debut ? `<p class="text-xs text-gray-400 mt-1">📅 Début : ${fmtDate(h.date_debut)}</p>` : ''}
+                        <div class="mt-3">
+                            <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                <span>Progression</span><span>${h.progression || 0}%</span>
+                            </div>
+                            <input type="range" min="0" max="100" value="${h.progression || 0}"
+                                oninput="this.nextElementSibling.textContent=this.value+'%'"
+                                onchange="updateHabProgression('${h.id}', this.value)" class="w-full">
+                        </div>
+                        <button onclick="completeHab('${h.id}')" class="text-2xl mt-2">🔥</button>
+                        <button onclick="deleteHab('${h.id}')" class="text-red-600 text-sm ml-2">Supprimer</button>
+                    </div>
+                `).join('') : '<p class="text-gray-500 text-center py-8">Aucune habitude</p>';
+
+                // Afficher projets (section complète, avec les enregistrements liés)
+                document.getElementById('projetList').innerHTML = projets.length ? projets.map(p => {
+                    const liesObj = objectifs.filter(o => o.projet_id === p.id);
+                    const liesTache = taches.filter(t => t.projet_id === p.id);
+                    const liesHab = habitudes.filter(h => h.projet_id === p.id);
+                    const total = liesObj.length + liesTache.length + liesHab.length;
+                    const lignes = [
+                        ...liesObj.map(o => `<li>🎯 ${o.titre} <span class="text-gray-400">(${o.progression}%)</span></li>`),
+                        ...liesTache.map(t => `<li>✅ ${t.titre} <span class="text-gray-400">(${t.statut === 'complete' ? 'complétée' : 'à faire'})</span></li>`),
+                        ...liesHab.map(h => `<li>🔥 ${h.nom}</li>`)
+                    ].join('');
+                    return `
+                    <div class="bg-white p-5 rounded-lg shadow">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-lg">${p.nom}</h3>
+                                ${p.date_debut ? `<p class="text-xs text-gray-400">📅 Début : ${fmtDate(p.date_debut)}</p>` : ''}
+                            </div>
+                            <span class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">${total} enregistrement${total > 1 ? 's' : ''}</span>
+                        </div>
+                        ${p.description ? `<p class="text-sm text-gray-600 mt-2">${p.description}</p>` : ''}
+                        <ul class="text-sm mt-3 space-y-1 list-none">${lignes || '<li class="text-gray-400">Aucun enregistrement lié pour le moment</li>'}</ul>
+                        <button onclick="deleteProjet('${p.id}')" class="text-red-600 text-sm mt-3">Supprimer le projet</button>
+                    </div>`;
+                }).join('') : '<p class="text-gray-500 text-center py-8">Aucun projet — crée-en un pour regrouper tes objectifs, tâches et habitudes.</p>';
+
+                // Aperçu compact sur le tableau de bord
+                document.getElementById('dashProjetList').innerHTML = projets.length ? projets.slice(0, 5).map(p => {
+                    const total = objectifs.filter(o => o.projet_id === p.id).length
+                                + taches.filter(t => t.projet_id === p.id).length
+                                + habitudes.filter(h => h.projet_id === p.id).length;
+                    return `
+                    <div class="flex justify-between items-center border-b border-gray-100 py-2 text-sm">
+                        <span class="font-medium">📁 ${p.nom}</span>
+                        <span class="text-gray-400">${p.date_debut ? fmtDate(p.date_debut) : ''} · ${total} enregistrement${total > 1 ? 's' : ''}</span>
+                    </div>`;
+                }).join('') : '<p class="text-gray-400 text-sm">Aucun projet pour le moment.</p>';
+
+            } catch (e) {
+                console.error('Erreur chargement:', e);
+            }
+        }
+
+        // Actions
+        async function updateObj(id, val) {
+            try {
+                await db.from('objectifs').update({ progression: parseInt(val) }).eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteObj(id) {
+            if (!confirm('Supprimer ?')) return;
+            try {
+                await db.from('objectifs').delete().eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function toggleTache(id, statut) {
+            try {
+                await db.from('taches').update({ statut: statut === 'a faire' ? 'complete' : 'a faire' }).eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function updateTacheProgression(id, val) {
+            try {
+                await db.from('taches').update({ progression: parseInt(val) }).eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteTache(id) {
+            if (!confirm('Supprimer ?')) return;
+            try {
+                await db.from('taches').delete().eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function completeHab(id) {
+            try {
+                const hab = (await db.from('habitudes').select('jours_completes').eq('id', id)).data[0];
+                await db.from('habitudes').update({ jours_completes: (hab.jours_completes || 0) + 1 }).eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function updateHabProgression(id, val) {
+            try {
+                await db.from('habitudes').update({ progression: parseInt(val) }).eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteHab(id) {
+            if (!confirm('Supprimer ?')) return;
+            try {
+                await db.from('habitudes').delete().eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteProjet(id) {
+            if (!confirm('Supprimer ce projet ? Les objectifs, tâches et habitudes liés seront conservés mais détachés du projet.')) return;
+            try {
+                await db.from('projets').delete().eq('id', id);
+                loadData();
+            } catch (e) { console.error(e); }
+        }
+
+        // Démarrer
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
