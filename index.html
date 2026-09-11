@@ -67,6 +67,7 @@ input[type=range]{accent-color:#0d9488}
     <div class="flex items-center gap-2">
       <span id="syncBadge" class="text-xs bg-white/20 px-2 py-1 rounded-full">Connexion…</span>
       <button id="darkToggle" class="w-9 h-9 rounded-full bg-white/20">🌙</button>
+      <button id="viewToggle" class="w-9 h-9 rounded-full bg-white/20" title="Changer l'affichage">🔲</button>
       <button id="refreshBtn" class="w-9 h-9 rounded-full bg-white/20">🔄</button>
       <button id="logoutBtn" class="w-9 h-9 rounded-full bg-white/20">⎋</button>
     </div>
@@ -602,6 +603,28 @@ $('loginBtn').onclick=async()=>{const email=$('loginEmail').value.trim(),passwor
 async function boot(){const {data:{session}}=await db.auth.getSession();if(!session){$('loginScreen').classList.remove('hidden');return}user=session.user;$('loginScreen').classList.add('hidden');$('appRoot').classList.remove('hidden');$('welcomeUser').textContent=user.email||'';await loadData();db.channel('organisateur-v3').on('postgres_changes',{event:'*',schema:'public'},()=>scheduleReload()).subscribe();setInterval(checkReminders,30000);resetInactivityTimer()}
 db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){$('loginScreen').classList.remove('hidden');$('appRoot').classList.add('hidden');$('loginForm').classList.add('hidden');$('forgotForm').classList.add('hidden');$('resetForm').classList.remove('hidden')}});
 boot();
+  // ==== Option d'affichage : Mosaïque / Liste ====
+const VIEW_TARGETS = ['objList', 'projectList', 'reminderList', 'noteList'];
+const VIEW_GRID_CLASS = 'grid md:grid-cols-2 gap-3';
+const VIEW_LIST_CLASS = 'flex flex-col gap-3';
+
+function applyViewMode(mode) {
+  VIEW_TARGETS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.className = mode === 'list' ? VIEW_LIST_CLASS : VIEW_GRID_CLASS;
+  });
+  localStorage.setItem('organisateur_view', mode);
+  const btn = document.getElementById('viewToggle');
+  if (btn) btn.textContent = mode === 'list' ? '☰' : '🔲';
+}
+function initViewMode() {
+  applyViewMode(localStorage.getItem('organisateur_view') || 'grid');
+}
+$('viewToggle').onclick = () => {
+  const current = localStorage.getItem('organisateur_view') || 'grid';
+  applyViewMode(current === 'grid' ? 'list' : 'grid');
+};
+initViewMode();
 </script>
 </body>
 </html>
