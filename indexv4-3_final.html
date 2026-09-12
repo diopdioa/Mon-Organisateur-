@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f766e">
+<title>Mon Organisateur V3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','system-ui','sans-serif'],display:['Plus Jakarta Sans','system-ui','sans-serif']}}}}</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+:root{--bg1:#e9eff5;--bg2:#eef4f2;--bg3:#e3ecf3}
+body{transition:.2s;font-family:'Inter',system-ui,sans-serif;background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 45%,var(--bg3) 100%);background-attachment:fixed}
+.dark body{background:linear-gradient(160deg,#0a0f1c 0%,#0c1426 50%,#0a1220 100%);background-attachment:fixed}
+h1,h2,h3,.font-display{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.card{transition:.2s}.modal{backdrop-filter:blur(4px)}
+.progress{height:8px;border-radius:99px;background:#e2e8f0;overflow:hidden}.progress>span{display:block;height:100%;border-radius:99px}
+.dark .progress{background:#334155}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:10px}
+.tab-btn{transition:.15s}.tab-btn:hover{background:#f0fdfa}
+.dark .tab-btn:hover{background:#134e4a}
+input[type=range]{accent-color:#0d9488}
+</style>
+</head>
+<body class="text-slate-800 dark:text-slate-100 min-h-screen font-sans">
+
+
+<div id="loginScreen" class="min-h-screen flex items-center justify-center p-3">
+  <div class="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-7">
+    <div class="text-center mb-7">
+      <div class="text-5xl mb-3">📊</div><h1 class="text-xl font-bold">Mon Organisateur V3</h1>
+      <p class="text-sm text-slate-500 mt-2">Organise tes objectifs, tâches et projets.</p>
+    </div>
+    <div id="loginForm">
+      <input id="loginEmail" type="email" placeholder="Adresse courriel" class="w-full p-3 border rounded-lg mb-3 dark:bg-slate-800 dark:border-slate-700">
+      <input id="loginPassword" type="password" placeholder="Mot de passe" class="w-full p-3 border rounded-lg mb-3 dark:bg-slate-800 dark:border-slate-700">
+      <button id="loginBtn" class="w-full bg-teal-600 hover:bg-teal-700 text-white p-3 rounded-lg font-semibold">Se connecter</button>
+      <button id="showForgotBtn" class="w-full text-sm text-teal-600 mt-4">Mot de passe oublié ?</button>
+      <p id="loginError" class="hidden text-sm text-red-600 mt-3"></p>
+    </div>
+    <div id="forgotForm" class="hidden">
+      <input id="forgotEmail" type="email" placeholder="Adresse courriel" class="w-full p-3 border rounded-lg mb-3 dark:bg-slate-800 dark:border-slate-700">
+      <button id="sendResetBtn" class="w-full bg-teal-600 text-white p-3 rounded-lg">Envoyer le lien</button>
+      <button id="backToLoginBtn" class="w-full text-sm text-slate-500 mt-4">← Retour</button>
+      <p id="forgotMsg" class="text-sm mt-3"></p>
+    </div>
+    <div id="resetForm" class="hidden">
+      <input id="newPassword" type="password" placeholder="Nouveau mot de passe" class="w-full p-3 border rounded-lg mb-3 dark:bg-slate-800 dark:border-slate-700">
+      <button id="saveNewPasswordBtn" class="w-full bg-teal-600 text-white p-3 rounded-lg">Mettre à jour</button>
+      <p id="resetMsg" class="text-sm mt-3"></p>
+    </div>
+  </div>
+</div>
+
+<div id="appRoot" class="hidden min-h-screen">
+<header class="bg-gradient-to-r from-teal-700 via-cyan-600 to-blue-600 text-white sticky top-0 z-30 shadow">
+  <div class="max-w-7xl mx-auto px-3 py-2 flex items-center justify-between gap-3">
+    <div><h1 class="text-xl md:text-xl font-bold">📊 Mon Organisateur</h1><p id="welcomeUser" class="text-xs opacity-80"></p></div>
+    <div class="flex-1 max-w-xs relative hidden sm:block">
+     <input id="globalSearch" type="text" placeholder="🔎 Recherche globale…" class="w-full p-1.5 text-sm rounded-lg bg-white/20 placeholder-white/70 text-white outline-none">
+     <div id="globalSearchResults" class="hidden absolute mt-1 left-0 right-0 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-lg shadow-xl max-h-80 overflow-y-auto z-40"></div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="syncBadge" class="text-xs bg-white/20 px-2 py-1 rounded-full">Connexion…</span>
+      <button id="viewToggle" class="w-9 h-9 rounded-full bg-white/20" title="Changer l'affichage">🔲</button>
+      <button id="darkToggle" class="w-9 h-9 rounded-full bg-white/20">🌙</button>
+      <button id="refreshBtn" class="w-9 h-9 rounded-full bg-white/20">🔄</button>
+      <button id="logoutBtn" class="w-9 h-9 rounded-full bg-white/20">⎋</button>
+    </div>
+  </div>
+</header>
+
+<nav class="bg-white dark:bg-slate-900 border-b dark:border-slate-800 sticky top-[57px] z-20">
+ <div class="max-w-7xl mx-auto px-2 flex flex-wrap gap-1 justify-center">
+  <button type="button" class="tab-btn active px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-teal-600 text-teal-600" data-tab="dashboard">📈 Tableau</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="objectifs">🎯 Objectifs</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="taches">✅ Tâches</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="excel">📊 Tableau Excel</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="projets">📁 Projets</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="bizplan">🧾 Plan d'affaires</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="documents">📁 Documents</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="planning">🗓️ Planning</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="rappels">⏰ Rappels</button>
+  <button type="button" class="tab-btn px-2.5 py-1.5 text-sm rounded-lg border-b-2 border-transparent" data-tab="notes">📝 Notes</button>
+ </div>
+</nav>
+
+<main class="max-w-7xl mx-auto px-3 py-3">
+<section id="dashboard" class="tab">
+ <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+  <div class="card bg-white dark:bg-slate-900 p-3 rounded-xl shadow"><div class="text-sm text-slate-500">Objectifs</div><div id="countObj" class="text-xl font-bold text-teal-600">0</div><div id="doneObj" class="text-xs text-slate-500"></div></div>
+  <div class="card bg-white dark:bg-slate-900 p-3 rounded-xl shadow"><div class="text-sm text-slate-500">Tâches</div><div id="countTask" class="text-xl font-bold text-emerald-600">0</div><div id="doneTask" class="text-xs text-slate-500"></div></div>
+  <div class="card bg-white dark:bg-slate-900 p-3 rounded-xl shadow"><div class="text-sm text-slate-500">Projets</div><div id="countProject" class="text-xl font-bold text-purple-600">0</div><div id="activeProject" class="text-xs text-slate-500"></div></div>
+  <div class="card bg-white dark:bg-slate-900 p-3 rounded-xl shadow"><div class="text-sm text-slate-500">À venir</div><div id="countUpcoming" class="text-xl font-bold text-pink-600">0</div><div class="text-xs text-slate-500">7 prochains jours</div></div>
+ </div>
+
+ <div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3 mb-3">
+  <div class="flex justify-between items-center mb-4"><h2 class="text-lg font-bold">📅 Aujourd'hui</h2><button class="text-sm text-teal-600" onclick="openTab('taches')">Voir les tâches →</button></div>
+  <div id="todayList" class="space-y-2"></div>
+ </div>
+
+ <div class="grid md:grid-cols-2 gap-3 mb-3">
+  <div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3"><h2 class="font-bold mb-3">📊 Progression</h2><canvas id="progressChart" height="120"></canvas></div>
+  <div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3"><h2 class="font-bold mb-3">🎯 Répartition des tâches</h2><canvas id="taskChart" height="120"></canvas></div>
+ </div>
+
+ <div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3 mb-3">
+  <div class="flex justify-between mb-3"><h2 class="font-bold">💰 Budget</h2><span id="budgetTotal" class="font-bold text-emerald-600">0 $</span></div>
+  <canvas id="budgetChart" height="80"></canvas>
+ </div>
+
+ <div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3">
+  <div class="flex justify-between items-center mb-3"><h2 class="font-bold">📁 Projets</h2><button class="text-sm text-teal-600" onclick="openTab('projets')">Voir tout →</button></div>
+  <div id="dashProjectList" class="grid md:grid-cols-3 gap-2"></div>
+ </div>
+</section>
+
+<section id="objectifs" class="tab hidden">
+ <div class="flex justify-between items-center mb-3"><h2 class="text-xl font-bold">🎯 Objectifs</h2><button id="addObj" class="bg-teal-600 text-white px-3 py-2 rounded-lg">+ Ajouter</button></div>
+ <div id="objList" class="grid md:grid-cols-2 gap-3"></div>
+</section>
+
+<section id="taches" class="tab hidden">
+ <div class="flex justify-between items-center mb-3"><h2 class="text-xl font-bold">✅ Tâches</h2><button id="addTask" class="bg-teal-600 text-white px-3 py-2 rounded-lg">+ Ajouter</button></div>
+ <div id="taskList" class="space-y-3"></div>
+</section>
+
+<section id="excel" class="tab hidden">
+ <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+  <h2 class="text-xl font-bold">📊 Tableau Excel</h2>
+  <div class="flex flex-wrap items-center gap-2">
+   <input id="excelSearch" type="text" placeholder="🔎 Rechercher une tâche…" class="p-2 text-sm border rounded-lg dark:bg-slate-800 dark:border-slate-700">
+   <select id="excelFilterStatut" class="p-2 text-sm border rounded-lg dark:bg-slate-800 dark:border-slate-700">
+    <option value="">Tous les statuts</option>
+    <option value="a_faire">À faire</option>
+    <option value="en_cours">En cours</option>
+    <option value="complete">Complète</option>
+   </select>
+   <select id="excelFilterPrio" class="p-2 text-sm border rounded-lg dark:bg-slate-800 dark:border-slate-700">
+    <option value="">Toutes priorités</option>
+    <option value="urgente">Urgente</option>
+    <option value="haute">Haute</option>
+    <option value="moyenne">Moyenne</option>
+    <option value="faible">Faible</option>
+   </select>
+   <button id="excelExport" class="text-sm border px-3 py-2 rounded-lg dark:border-slate-700">⬇️ Exporter CSV</button>
+   <button id="excelAddRow" class="bg-teal-600 text-white px-3 py-2 rounded-lg text-sm">+ Ajouter une ligne</button>
+  </div>
+ </div>
+ <div id="excelBulkBar" class="hidden flex items-center justify-between bg-amber-50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700 rounded-lg px-3 py-2 mb-2 text-sm">
+  <span id="excelBulkCount">0 sélectionnée(s)</span>
+  <button id="excelBulkDelete" class="text-red-600 font-medium">🗑️ Supprimer la sélection</button>
+ </div>
+ <div class="bg-white dark:bg-slate-900 rounded-xl shadow overflow-x-auto">
+  <table class="w-full text-sm border-collapse min-w-[950px]">
+   <thead>
+    <tr class="bg-slate-50 dark:bg-slate-800 text-left">
+     <th class="p-2 w-8"><input type="checkbox" id="excelSelectAll"></th>
+     <th data-sort="titre" class="p-2 font-semibold cursor-pointer select-none whitespace-nowrap">Tâche <span class="sortArrow" data-col="titre"></span></th>
+     <th data-sort="priorite" class="p-2 font-semibold cursor-pointer select-none whitespace-nowrap">Priorité <span class="sortArrow" data-col="priorite"></span></th>
+     <th data-sort="budget" class="p-2 font-semibold cursor-pointer select-none whitespace-nowrap">Budget <span class="sortArrow" data-col="budget"></span></th>
+     <th data-sort="projet_id" class="p-2 font-semibold cursor-pointer select-none whitespace-nowrap">Projet <span class="sortArrow" data-col="projet_id"></span></th>
+     <th data-sort="progression" class="p-2 font-semibold cursor-pointer select-none whitespace-nowrap">Progression <span class="sortArrow" data-col="progression"></span></th>
+     <th data-sort="date_echeance" class="p-2 font-semibold cursor-pointer select-none whitespace-nowrap">Date <span class="sortArrow" data-col="date_echeance"></span></th>
+     <th data-sort="statut" class="p-2 font-semibold cursor-pointer select-none whitespace-nowrap">Statut <span class="sortArrow" data-col="statut"></span></th>
+     <th class="p-2 font-semibold whitespace-nowrap"></th>
+    </tr>
+   </thead>
+   <tbody id="excelBody"></tbody>
+   <tfoot>
+    <tr class="border-t-2 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-semibold">
+     <td class="p-2"></td>
+     <td class="p-2" id="excelTotalCount"></td>
+     <td class="p-2"></td>
+     <td class="p-2" id="excelTotalBudget"></td>
+     <td class="p-2"></td>
+     <td class="p-2" id="excelTotalProgress"></td>
+     <td class="p-2" colspan="3"></td>
+    </tr>
+   </tfoot>
+  </table>
+ </div>
+ <p class="text-xs text-slate-500 mt-2">Les modifications sont enregistrées automatiquement et synchronisées avec Supabase.</p>
+</section>
+
+<section id="projets" class="tab hidden">
+ <div class="flex justify-between items-center mb-3"><h2 class="text-xl font-bold">📁 Projets</h2><button id="addProject" class="bg-purple-600 text-white px-3 py-2 rounded-lg">+ Ajouter</button></div>
+ <div id="projectList" class="grid md:grid-cols-2 gap-3"></div>
+</section>
+
+<section id="bizplan" class="tab hidden">
+ <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+  <h2 class="text-xl font-bold">🧾 Plan d'affaires</h2>
+  <div class="flex items-center gap-2">
+   <select id="bpProjectSelect" class="p-2 text-sm border rounded-lg dark:bg-slate-800 dark:border-slate-700 min-w-[200px]"></select>
+   <button id="bpExport" class="text-sm border px-3 py-2 rounded-lg dark:border-slate-700">🖨️ Exporter / Imprimer</button>
+  </div>
+ </div>
+ <div id="bpEmpty" class="hidden bg-white dark:bg-slate-900 rounded-xl shadow p-6 text-center text-slate-500">Crée d'abord un projet dans l'onglet 📁 Projets, puis reviens ici pour rédiger son plan d'affaires.</div>
+ <div id="bpEditor" class="hidden space-y-3">
+  <p id="bpStatus" class="text-xs text-slate-500"></p>
+ </div>
+</section>
+
+<section id="documents" class="tab hidden">
+ <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+  <h2 class="text-xl font-bold">📁 Documents</h2>
+  <div class="flex items-center gap-2">
+   <select id="docProjectSelect" class="p-2 text-sm border rounded-lg dark:bg-slate-800 dark:border-slate-700 min-w-[180px]"></select>
+   <input type="file" id="docUploadInput" accept=".pdf,.doc,.docx" class="text-sm">
+   <button id="docUploadBtn" class="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm">+ Téléverser</button>
+  </div>
+ </div>
+ <p id="docUploadStatus" class="text-xs text-slate-500 mb-2"></p>
+ <div id="docList" class="bg-white dark:bg-slate-900 rounded-xl shadow divide-y dark:divide-slate-800"></div>
+</section>
+
+<section id="planning" class="tab hidden">
+ <div class="flex justify-between items-center mb-3"><h2 class="text-xl font-bold">🗓️ Planning</h2><button id="addPlanning" class="bg-pink-600 text-white px-3 py-2 rounded-lg">+ Ajouter</button></div>
+ <div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3"><div id="planningList" class="space-y-3"></div></div>
+</section>
+
+<section id="rappels" class="tab hidden">
+ <div class="flex justify-between items-center mb-3"><h2 class="text-xl font-bold">⏰ Rappels</h2><button id="addReminder" class="bg-pink-600 text-white px-3 py-2 rounded-lg">+ Ajouter</button></div>
+ <div id="reminderList" class="grid md:grid-cols-2 gap-3"></div>
+</section>
+
+<section id="notes" class="tab hidden">
+ <div class="flex justify-between items-center mb-3"><h2 class="text-xl font-bold">📝 Notes</h2><button id="addNote" class="bg-teal-600 text-white px-3 py-2 rounded-lg">+ Ajouter</button></div>
+ <div id="noteList" class="grid md:grid-cols-2 gap-3"></div>
+</section>
+</main>
+</div>
+
+<div id="modal" class="modal hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-3">
+ <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-4">
+  <div class="flex justify-between items-center mb-3"><h3 id="modalTitle" class="text-xl font-bold">Ajouter</h3><button onclick="closeModal()" class="text-xl">×</button></div>
+  <div id="modalBody"></div>
+ </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://azqgdgxneymeyrbjgiqo.supabase.co';
+const SUPABASE_KEY='sb_publishable_kWWqcZptq5Qbtf3dAuiEcQ_ggOyL3ye';
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let user=null, data={objectifs:[],taches:[],projets:[],planning:[],rappels:[],notes:[],businessPlans:[]};
+let excelSort={col:'date_echeance',dir:'asc'};
+let charts={progress:null,task:null,budget:null}, editing=null;
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const money=n=>Number(n||0).toLocaleString('fr-CA',{style:'currency',currency:'CAD'});
+const dateFr=d=>d?new Date(d+'T12:00:00').toLocaleDateString('fr-CA',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+function setSync(ok){$('syncBadge').textContent=ok?'🟢 Synchronisé':'🔴 Erreur';$('syncBadge').className='text-xs px-2 py-1 rounded-full '+(ok?'bg-green-500/80':'bg-red-500/80')}
+function openTab(id){document.querySelectorAll('.tab').forEach(x=>x.classList.add('hidden'));$(id).classList.remove('hidden');document.querySelectorAll('.tab-btn').forEach(b=>{b.classList.remove('border-teal-600','text-teal-600');b.classList.add('border-transparent');if(b.dataset.tab===id){b.classList.add('border-teal-600','text-teal-600');b.classList.remove('border-transparent')}})}
+document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>openTab(b.dataset.tab));
+function closeModal(){$('modal').classList.add('hidden');editing=null}
+function modal(title,body){$('modalTitle').textContent=title;$('modalBody').innerHTML=body;$('modal').classList.remove('hidden')}
+const input=(id,label,value='',type='text',extra='')=>`<label class="block text-sm font-medium mb-1">${label}</label><input id="${id}" type="${type}" value="${esc(value)}" class="w-full p-2.5 border rounded-lg mb-3 dark:bg-slate-800 dark:border-slate-700" ${extra}>`;
+const textarea=(id,label,value='')=>`<label class="block text-sm font-medium mb-1">${label}</label><textarea id="${id}" class="w-full p-2.5 border rounded-lg mb-3 h-24 dark:bg-slate-800 dark:border-slate-700">${esc(value)}</textarea>`;
+const select=(id,label,value,opts)=>`<label class="block text-sm font-medium mb-1">${label}</label><select id="${id}" class="w-full p-2.5 border rounded-lg mb-3 dark:bg-slate-800 dark:border-slate-700">${opts.map(o=>`<option value="${o[0]}" ${o[0]===value?'selected':''}>${o[1]}</option>`).join('')}</select>`;
+const saveBtn='<div class="flex gap-2"><button id="modalSave" class="flex-1 bg-teal-600 text-white p-2.5 rounded-lg font-semibold">Enregistrer</button><button onclick="closeModal()" class="flex-1 border p-2.5 rounded-lg">Annuler</button></div>';
+
+function projectOptions(selected=''){return [['','Aucun'],...data.projets.map(p=>[p.id,p.nom])]}
+function projectSpent(projId){return data.taches.filter(t=>t.projet_id===projId).reduce((s,t)=>s+Number(t.budget||0),0)}
+function projectRemaining(proj){return Number(proj.budget||0)-projectSpent(proj.id)}
+function objectiveOptions(selected=''){return [['','Aucun'],...data.objectifs.map(o=>[o.id,o.titre])]}
+function taskOptions(selected=''){return [['','Aucune'],...data.taches.map(t=>[t.id,t.titre])]}
+
+function showObjective(id=null){
+ const o=id?data.objectifs.find(x=>x.id===id):{};
+ editing={type:'objectifs',id};
+ modal(id?'Modifier l’objectif':'Nouvel objectif',
+ input('f_titre','Titre',o.titre)+textarea('f_desc','Description',o.description)+
+ select('f_type','Type',o.type_objectif||'mensuel',[['mensuel','Mensuel'],['annuel','Annuel'],['autre','Autre']])+
+ input('f_start','Date de début',o.date_debut||today(),'date')+input('f_end','Date de fin',o.date_fin||'','date')+
+ select('f_prio','Priorité',o.priorite||'moyenne',[['faible','Faible'],['moyenne','Moyenne'],['haute','Haute'],['urgente','Urgente']])+
+ input('f_budget','Budget',o.budget||'','number','step="0.01"')+
+ select('f_status','Statut',o.statut||'en_cours',[['en_cours','En cours'],['termine','Terminé'],['annule','Annulé']])+saveBtn);
+ $('modalSave').onclick=async()=>{const p={user_id:user.id,titre:$('f_titre').value.trim(),description:$('f_desc').value,type_objectif:$('f_type').value,date_debut:$('f_start').value||null,date_fin:$('f_end').value||null,priorite:$('f_prio').value,budget:$('f_budget').value?+$('f_budget').value:null,statut:$('f_status').value};if(!p.titre)return alert('Titre requis');await save('objectifs',p,id);};
+}
+function showTask(id=null){
+ const t=id?data.taches.find(x=>x.id===id):{};
+ editing={type:'taches',id};
+ modal(id?'Modifier la tâche':'Nouvelle tâche',
+ input('f_titre','Titre',t.titre)+textarea('f_desc','Description',t.description)+
+ input('f_date','Date',t.date_tache||today(),'date')+input('f_dead','Échéance',t.date_echeance||'','date')+
+ `<div class="grid grid-cols-2 gap-3">${input('f_h1','Début',t.heure_debut||'','time')}${input('f_h2','Fin',t.heure_fin||'','time')}</div>`+
+ select('f_prio','Priorité',t.priorite||'moyenne',[['faible','Faible'],['moyenne','Moyenne'],['haute','Haute'],['urgente','Urgente']])+
+ select('f_proj','Projet',t.projet_id||'',projectOptions())+input('f_budget','Budget',t.budget||'','number','step="0.01"')+
+ '<p id="f_budgetHint" class="text-xs text-slate-500 -mt-2 mb-3"></p>'+
+ select('f_status','Statut',t.statut||'a_faire',[['a_faire','À faire'],['en_cours','En cours'],['complete','Complète']])+saveBtn);
+ const updateBudgetHint=()=>{const proj=data.projets.find(x=>x.id===$('f_proj').value);if(!proj||!proj.budget){$('f_budgetHint').textContent='';return}const otherSpent=projectSpent(proj.id)-(id&&t.projet_id===proj.id?Number(t.budget||0):0);const thisBudget=Number($('f_budget').value||0);const rem=Number(proj.budget)-otherSpent-thisBudget;$('f_budgetHint').textContent=`Projet "${proj.nom}" — budget global ${money(proj.budget)}, restant après cette tâche : ${money(rem)}`;$('f_budgetHint').className='text-xs -mt-2 mb-3 '+(rem<0?'text-red-600':'text-slate-500')};
+ $('f_proj').onchange=updateBudgetHint;$('f_budget').oninput=updateBudgetHint;updateBudgetHint();
+ $('modalSave').onclick=async()=>{const p={user_id:user.id,titre:$('f_titre').value.trim(),description:$('f_desc').value,date_tache:$('f_date').value||null,date_echeance:$('f_dead').value||null,heure_debut:$('f_h1').value||null,heure_fin:$('f_h2').value||null,priorite:$('f_prio').value,projet_id:$('f_proj').value||null,budget:$('f_budget').value?+$('f_budget').value:null,statut:$('f_status').value,terminee:$('f_status').value==='complete',progression:$('f_status').value==='complete'?100:(t.progression||0)};if(!p.titre)return alert('Titre requis');await save('taches',p,id);};
+}
+function bizPlanBlock(p,id){
+ const current=id&&p.business_plan_path
+  ?`📄 <a href="#" onclick="downloadBusinessPlan('${esc(p.business_plan_path)}','${esc(p.business_plan_name||'plan-affaires')}');return false;" class="text-teal-600 underline">${esc(p.business_plan_name||'Fichier')}</a> <button type="button" onclick="removeBusinessPlan('${id}')" class="text-red-600 ml-2 text-xs">Supprimer</button>`
+  :'<span class="text-slate-500">Aucun fichier</span>';
+ if(!id)return '<div class="mb-3"><label class="block text-sm font-medium mb-1">Plan d\'affaires</label><p class="text-xs text-slate-500">Enregistre d\'abord le projet, puis rouvre-le en modification pour y joindre un plan d\'affaires (PDF/Word).</p></div>';
+ return `<div class="mb-3"><label class="block text-sm font-medium mb-1">Plan d'affaires</label><div id="bizPlanCurrent" class="text-sm mb-2">${current}</div><input type="file" id="f_bizplan" accept=".pdf,.doc,.docx" class="w-full text-sm border rounded-lg p-2 dark:bg-slate-800 dark:border-slate-700"><p id="bizPlanStatus" class="text-xs text-slate-500 mt-1"></p></div>`;
+}
+function showProject(id=null){
+ const p=id?data.projets.find(x=>x.id===id):{};
+ editing={type:'projets',id};
+ modal(id?'Modifier le projet':'Nouveau projet',
+ input('f_nom','Nom',p.nom)+textarea('f_desc','Description',p.description)+
+ input('f_start','Date de début',p.date_debut||today(),'date')+input('f_end','Date de fin',p.date_fin||'','date')+
+ input('f_budget','Budget global',p.budget||'','number','step="0.01"')+
+ (id&&p.budget?`<p class="text-xs text-slate-500 -mt-2 mb-3">Dépensé par les tâches liées : ${money(projectSpent(p.id))} · Restant : ${money(projectRemaining(p))}</p>`:'')+
+ select('f_status','Statut',p.statut||'en_cours',[['en_cours','En cours'],['termine','Terminé'],['en_attente','En attente'],['annule','Annulé']])+
+ bizPlanBlock(p,id)+saveBtn);
+ if(id)$('f_bizplan').onchange=async()=>{const file=$('f_bizplan').files[0];if(file)await uploadBusinessPlan(id,file)};
+ $('modalSave').onclick=async()=>{const pld={user_id:user.id,nom:$('f_nom').value.trim(),description:$('f_desc').value,date_debut:$('f_start').value||null,date_fin:$('f_end').value||null,budget:$('f_budget').value?+$('f_budget').value:null,statut:$('f_status').value};if(!pld.nom)return alert('Nom requis');await save('projets',pld,id);};
+}
+async function uploadBusinessPlan(projectId,file,statusElId='bizPlanStatus'){
+ const proj=data.projets.find(x=>x.id===projectId);
+ const setStatus=(t,isError)=>{const el=$(statusElId);if(el){el.textContent=t;el.className=isError?'text-xs text-red-600 font-medium':'text-xs text-slate-500'}};
+ setStatus('Téléversement…',false);
+ const path=`${user.id}/${projectId}/${Date.now()}_${file.name}`;
+ const {error:upErr}=await db.storage.from('business-plans').upload(path,file,{upsert:true});
+ if(upErr){setStatus('Erreur de téléversement : '+upErr.message+' — vérifie que le bucket "business-plans" existe dans Supabase (voir plans_affaires_setup.sql)',true);return}
+ if(proj&&proj.business_plan_path&&proj.business_plan_path!==path){await db.storage.from('business-plans').remove([proj.business_plan_path])}
+ const {error:updErr}=await db.from('projets').update({business_plan_path:path,business_plan_name:file.name,business_plan_uploaded_at:new Date().toISOString()}).eq('id',projectId).eq('user_id',user.id);
+ if(updErr){setStatus('Erreur d\'enregistrement : '+updErr.message+' — vérifie que les colonnes business_plan_* existent sur la table projets',true);return}
+ if(proj)Object.assign(proj,{business_plan_path:path,business_plan_name:file.name,business_plan_uploaded_at:new Date().toISOString()});
+ setStatus('Téléversé ✅',false);
+ if($('bizPlanCurrent'))$('bizPlanCurrent').innerHTML=`📄 <a href="#" onclick="downloadBusinessPlan('${esc(path)}','${esc(file.name)}');return false;" class="text-teal-600 underline">${esc(file.name)}</a> <button type="button" onclick="removeBusinessPlan('${projectId}')" class="text-red-600 ml-2 text-xs">Supprimer</button>`;
+ render();
+}
+async function downloadBusinessPlan(path,filename){
+ const {data:blob,error}=await db.storage.from('business-plans').download(path);
+ if(error){alert('Erreur de téléchargement : '+error.message);return}
+ const url=URL.createObjectURL(blob);
+ const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent);
+ if(isIOS){
+  // Safari iOS ignore l'attribut "download" : on ouvre le fichier dans un nouvel onglet,
+  // l'utilisateur peut ensuite utiliser le bouton Partager pour l'enregistrer.
+  window.open(url,'_blank');
+ }else{
+  const a=document.createElement('a');a.href=url;a.download=filename||'plan-affaires';document.body.appendChild(a);a.click();a.remove();
+ }
+ setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+async function removeBusinessPlan(projectId){
+ if(!confirm('Supprimer le plan d\'affaires de ce projet ?'))return;
+ const proj=data.projets.find(x=>x.id===projectId);
+ if(!proj||!proj.business_plan_path)return;
+ await db.storage.from('business-plans').remove([proj.business_plan_path]);
+ const {error}=await db.from('projets').update({business_plan_path:null,business_plan_name:null,business_plan_uploaded_at:null}).eq('id',projectId).eq('user_id',user.id);
+ if(error){alert(error.message);return}
+ proj.business_plan_path=null;proj.business_plan_name=null;
+ if($('bizPlanCurrent'))$('bizPlanCurrent').innerHTML='<span class="text-slate-500">Aucun fichier</span>';
+ render();
+}
+
+// ==== 📁 Documents : vue centralisée de tous les fichiers téléversés ====
+function renderDocuments(){
+ const sel=$('docProjectSelect');
+ const prevVal=sel?sel.value:null;
+ if(sel){
+  sel.innerHTML=data.projets.map(p=>`<option value="${p.id}">${esc(p.nom)}</option>`).join('')||'<option value="">Aucun projet</option>';
+  if(prevVal&&data.projets.some(p=>p.id===prevVal))sel.value=prevVal;
+ }
+ const withFiles=data.projets.filter(p=>p.business_plan_path);
+ $('docList').innerHTML=withFiles.length?withFiles.map(p=>`<div class="p-3 flex items-center justify-between gap-2 flex-wrap">
+  <div><div class="font-medium">📄 ${esc(p.business_plan_name||'Fichier')}</div><div class="text-xs text-slate-500">Projet : ${esc(p.nom)}${p.business_plan_uploaded_at?` · Téléversé le ${dateFr(p.business_plan_uploaded_at.slice(0,10))}`:''}</div></div>
+  <div class="flex gap-3 text-sm">
+   <button class="text-teal-600" onclick="downloadBusinessPlan('${esc(p.business_plan_path)}','${esc(p.business_plan_name||'plan-affaires')}')">⬇️ Télécharger</button>
+   <button class="text-red-600" onclick="removeBusinessPlan('${p.id}')">🗑️ Supprimer</button>
+  </div>
+ </div>`).join(''):'<p class="p-4 text-slate-500 text-sm">Aucun fichier téléversé pour l’instant. Choisis un projet ci-dessus et téléverse un fichier.</p>';
+}
+$('docUploadBtn').onclick=async()=>{
+ const pid=$('docProjectSelect').value,file=$('docUploadInput').files[0];
+ const st=$('docUploadStatus');
+ if(!pid){st.textContent='Choisis un projet.';st.className='text-xs text-red-600 font-medium mb-2';return}
+ if(!file){st.textContent='Choisis un fichier.';st.className='text-xs text-red-600 font-medium mb-2';return}
+ await uploadBusinessPlan(pid,file,'docUploadStatus');
+ $('docUploadInput').value='';
+};
+
+// ==== 🧾 Plan d'affaires structuré (par projet) ====
+const BP_SECTIONS=[
+ ['resume_executif',"Résumé exécutif","En quelques phrases : la vision, la mission et ce qui rend ton projet unique."],
+ ['entreprise',"Description de l'entreprise","Historique, forme juridique, emplacement, mission et valeurs."],
+ ['marche',"Étude de marché","Clientèle cible, taille du marché, concurrence, tendances."],
+ ['produits',"Produits / Services","Ce que tu vends, ce qui le différencie, ton offre actuelle et future."],
+ ['marketing',"Marketing & Ventes","Comment tu attires et gardes tes clients, tes canaux, ta stratégie de prix."],
+ ['operations',"Opérations","Fonctionnement au quotidien, fournisseurs, équipements, logistique."],
+ ['equipe',"Équipe & Organisation","Qui fait quoi, expérience clé, besoins de recrutement."],
+ ['finances',"Plan financier","Revenus prévus, coûts, seuil de rentabilité, besoins de financement."],
+ ['annexes',"Annexes","Documents complémentaires, sources, hypothèses détaillées."]
+];
+let bpCurrentProjectId=null,bpDebounce={};
+async function ensureBusinessPlan(projectId){
+ let bp=data.businessPlans.find(x=>x.projet_id===projectId);
+ if(bp)return bp;
+ const {data:inserted,error}=await db.from('business_plans').insert({user_id:user.id,projet_id:projectId}).select();
+ if(error){console.warn('Impossible de créer le plan d\'affaires :',error.message);return null}
+ bp=inserted&&inserted[0];if(bp)data.businessPlans.push(bp);
+ return bp;
+}
+function renderBizPlan(){
+ const sel=$('bpProjectSelect');
+ if(!data.projets.length){$('bpEmpty').classList.remove('hidden');$('bpEditor').classList.add('hidden');if(sel)sel.innerHTML='';return}
+ $('bpEmpty').classList.add('hidden');$('bpEditor').classList.remove('hidden');
+ sel.innerHTML=data.projets.map(p=>`<option value="${p.id}" ${p.id===bpCurrentProjectId?'selected':''}>${esc(p.nom)}</option>`).join('');
+ if(!bpCurrentProjectId||!data.projets.some(p=>p.id===bpCurrentProjectId))bpCurrentProjectId=data.projets[0].id;
+ sel.value=bpCurrentProjectId;
+ // Ne pas écraser le texte en cours de frappe si un rechargement arrive en arrière-plan
+ if(document.activeElement&&$('bpEditor').contains(document.activeElement))return;
+ drawBizPlanSections();
+}
+async function drawBizPlanSections(){
+ const bp=data.businessPlans.find(x=>x.projet_id===bpCurrentProjectId)||await ensureBusinessPlan(bpCurrentProjectId)||{};
+ const wrap=document.createElement('div');wrap.className='space-y-3';
+ BP_SECTIONS.forEach(([key,title,hint])=>{
+  const d=document.createElement('details');d.open=true;d.className='bg-white dark:bg-slate-900 rounded-xl shadow p-4';
+  d.innerHTML=`<summary class="font-semibold cursor-pointer">${title}</summary><p class="text-xs text-slate-500 mt-1 mb-2">${hint}</p><textarea data-key="${key}" rows="4" class="w-full p-2 border rounded-lg dark:bg-slate-800 dark:border-slate-700 text-sm">${esc(bp[key]||'')}</textarea>`;
+  wrap.appendChild(d);
+ });
+ const editor=$('bpEditor');
+ editor.innerHTML='';
+ const status=document.createElement('p');status.id='bpStatus';status.className='text-xs text-slate-500';
+ editor.appendChild(status);editor.appendChild(wrap);
+ const saveBar=document.createElement('div');saveBar.className='flex justify-end pt-1';
+ saveBar.innerHTML='<button id="bpSaveAll" class="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium">💾 Enregistrer le plan d\'affaires</button>';
+ editor.appendChild(saveBar);
+ editor.querySelectorAll('textarea[data-key]').forEach(ta=>{
+  ta.addEventListener('input',()=>{
+   status.textContent='Modification en cours…';status.className='text-xs text-slate-500';
+   clearTimeout(bpDebounce[ta.dataset.key]);
+   bpDebounce[ta.dataset.key]=setTimeout(()=>saveBizPlanField(ta.dataset.key,ta.value,status),700);
+  });
+ });
+ $('bpSaveAll').onclick=()=>saveAllBizPlanFields(editor,status);
+}
+async function saveBizPlanField(key,value,statusEl){
+ const bp=data.businessPlans.find(x=>x.projet_id===bpCurrentProjectId);
+ if(!bp)return;
+ const payload={};payload[key]=value;
+ const {error}=await db.from('business_plans').update(payload).eq('id',bp.id).eq('user_id',user.id);
+ if(statusEl){statusEl.textContent=error?('Erreur : '+error.message):'Enregistré ✅';statusEl.className=error?'text-xs text-red-600 font-medium':'text-xs text-emerald-600'}
+ if(!error)Object.assign(bp,payload);
+}
+async function saveAllBizPlanFields(editor,statusEl){
+ const bp=data.businessPlans.find(x=>x.projet_id===bpCurrentProjectId);
+ if(!bp)return;
+ Object.values(bpDebounce).forEach(t=>clearTimeout(t));
+ statusEl.textContent='Enregistrement…';statusEl.className='text-xs text-slate-500';
+ const payload={};
+ editor.querySelectorAll('textarea[data-key]').forEach(ta=>{payload[ta.dataset.key]=ta.value});
+ const {error}=await db.from('business_plans').update(payload).eq('id',bp.id).eq('user_id',user.id);
+ if(error){statusEl.textContent='Erreur : '+error.message;statusEl.className='text-xs text-red-600 font-medium';return}
+ Object.assign(bp,payload);
+ statusEl.textContent='✅ Plan d\'affaires enregistré';statusEl.className='text-xs text-emerald-600 font-medium';
+}
+$('bpProjectSelect').onchange=()=>{bpCurrentProjectId=$('bpProjectSelect').value;drawBizPlanSections()};
+$('bpExport').onclick=()=>{
+ const proj=data.projets.find(p=>p.id===bpCurrentProjectId);
+ const bp=data.businessPlans.find(x=>x.projet_id===bpCurrentProjectId)||{};
+ const html=`<html><head><meta charset="utf-8"><title>Plan d'affaires - ${esc(proj?.nom||'')}</title>
+ <style>body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;max-width:760px;margin:40px auto;color:#1e293b}h1{font-size:24px}h2{font-size:16px;margin-top:28px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}p{white-space:pre-wrap;line-height:1.5;font-family:Inter,system-ui,sans-serif}</style>
+ </head><body><h1>Plan d'affaires — ${esc(proj?.nom||'')}</h1>
+ ${BP_SECTIONS.map(([key,title])=>`<h2>${title}</h2><p>${esc(bp[key]||'—')}</p>`).join('')}
+ </body></html>`;
+ const w=window.open('','_blank');w.document.write(html);w.document.close();w.focus();w.print();
+};
+function showPlanning(id=null){
+ const p=id?data.planning.find(x=>x.id===id):{};
+ editing={type:'planning',id};
+ modal(id?'Modifier le planning':'Nouvel événement',
+ input('f_titre','Titre',p.titre)+textarea('f_desc','Description',p.description)+
+ input('f_date','Date',p.date_planifiee||today(),'date')+`<div class="grid grid-cols-2 gap-3">${input('f_h1','Début',p.heure_debut||'09:00','time')}${input('f_h2','Fin',p.heure_fin||'','time')}</div>`+
+ input('f_lieu','Lieu',p.lieu)+
+ select('f_status','Statut',p.statut||'planifie',[['planifie','Planifié'],['termine','Terminé'],['annule','Annulé']])+saveBtn);
+ $('modalSave').onclick=async()=>{const pld={user_id:user.id,titre:$('f_titre').value.trim(),description:$('f_desc').value,date_planifiee:$('f_date').value,heure_debut:$('f_h1').value||null,heure_fin:$('f_h2').value||null,lieu:$('f_lieu').value,statut:$('f_status').value};if(!pld.titre||!pld.date_planifiee)return alert('Titre et date requis');await save('planning',pld,id);};
+}
+function showReminder(id=null){
+ const r=id?data.rappels.find(x=>x.id===id):{};
+ editing={type:'rappel',id};
+ modal(id?'Modifier le rappel':'Nouveau rappel',
+ input('f_titre','Titre',r.titre)+textarea('f_desc','Description',r.description)+
+ input('f_date','Date',r.date_rappel||today(),'date')+input('f_hour','Heure',r.heure_rappel||'09:00','time')+
+ select('f_task','Tâche liée',r.tache_id||'',taskOptions())+select('f_prio','Priorité',r.priorite||'moyenne',[['urgente','Urgente'],['moyenne','Moyenne'],['faible','Faible']])+
+ select('f_rec','Récurrence',r.recurrence||'aucune',[['aucune','Aucune'],['quotidien','Quotidienne'],['hebdomadaire','Hebdomadaire'],['mensuel','Mensuelle']])+saveBtn);
+ $('modalSave').onclick=async()=>{const p={user_id:user.id,titre:$('f_titre').value.trim(),description:$('f_desc').value,date_rappel:$('f_date').value||null,heure_rappel:$('f_hour').value,recurrence:$('f_rec').value,tache_id:$('f_task').value||null,priorite:$('f_prio').value,is_active:true};if(!p.titre)return alert('Titre requis');await save('rappel',p,id);if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();};
+}
+function showNote(id=null){
+ const n=id?data.notes.find(x=>x.id===id):{};
+ editing={type:'notes',id};
+ modal(id?'Modifier la note':'Nouvelle note',
+ input('f_titre','Titre',n.titre)+textarea('f_content','Contenu',n.contenu)+
+ `<label class="block text-sm font-medium mb-1">Tags</label><input id="f_tags" class="w-full p-2.5 border rounded-lg mb-3 dark:bg-slate-800 dark:border-slate-700" value="${esc((n.tags||[]).join(', '))}" placeholder="travail, idée, important">`+
+ select('f_pin','Épinglée',n.epinglee?'true':'false',[['false','Non'],['true','Oui']])+saveBtn);
+ $('modalSave').onclick=async()=>{const p={user_id:user.id,titre:$('f_titre').value.trim(),contenu:$('f_content').value.trim(),tags:$('f_tags').value.split(',').map(x=>x.trim()).filter(Boolean),epinglee:$('f_pin').value==='true'};if(!p.titre||!p.contenu)return alert('Titre et contenu requis');await save('notes',p,id);};
+}
+
+async function save(table,payload,id){
+ const q=id?db.from(table).update(payload).eq('id',id).eq('user_id',user.id):db.from(table).insert(payload);
+ const {error}=await q;if(error){alert('Erreur Supabase: '+error.message);return}closeModal();await loadData();
+}
+async function remove(table,id){if(!confirm('Supprimer cet élément ?'))return;const {error}=await db.from(table).delete().eq('id',id).eq('user_id',user.id);if(error)alert(error.message);else loadData()}
+async function progress(table,id,val){const p={progression:+val};const {error}=await db.from(table).update(p).eq('id',id).eq('user_id',user.id);if(error)alert(error.message);else loadData()}
+async function toggleTask(id,done){const {error}=await db.from('taches').update({terminee:!done,statut:!done?'complete':'a_faire',progression:!done?100:0}).eq('id',id).eq('user_id',user.id);if(error)alert(error.message);else loadData()}
+function render(){
+ const obj=data.objectifs,t=data.taches,p=data.projets,pl=data.planning,r=data.rappels,n=data.notes;
+ $('countObj').textContent=obj.length;$('doneObj').textContent=`${obj.filter(x=>x.progression===100).length} terminé(s)`;
+ $('countTask').textContent=t.filter(x=>!x.terminee&&x.statut!=='complete').length;$('doneTask').textContent=`${t.filter(x=>x.terminee||x.statut==='complete').length} terminée(s)`;
+ $('countProject').textContent=p.length;$('activeProject').textContent=`${p.filter(x=>x.statut==='en_cours').length} actif(s)`;
+ const lim=new Date();lim.setDate(lim.getDate()+7);$('countUpcoming').textContent=pl.filter(x=>x.date_planifiee>=today()&&x.date_planifiee<=lim.toISOString().slice(0,10)).length;
+
+ const todays=t.filter(x=>x.date_tache===today()||x.date_echeance===today());
+ $('todayList').innerHTML=todays.length?todays.map(x=>`<div class="flex items-center justify-between gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800"><div><div class="font-medium ${x.terminee?'line-through opacity-60':''}">${esc(x.titre)}</div><div class="text-xs text-slate-500">${x.heure_debut||''} ${x.priorite?'· '+esc(x.priorite):''}</div></div><button onclick="toggleTask('${x.id}',${!!x.terminee})" class="text-lg">${x.terminee?'↩️':'☑️'}</button></div>`).join(''):'<p class="text-slate-500 text-sm">Aucune tâche prévue aujourd’hui.</p>';
+
+ $('objList').innerHTML=obj.length?obj.map(x=>`<div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3"><div class="flex justify-between gap-3"><div><h3 class="font-bold">${esc(x.titre)}</h3><p class="text-sm text-slate-500 mt-1">${esc(x.description||'')}</p></div><span class="text-xs px-2 py-1 rounded-full bg-indigo-100 text-teal-700">${esc(x.type_objectif||'mensuel')}</span></div><div class="mt-4 flex justify-between text-xs"><span>Progression</span><b>${x.progression||0}%</b></div><input class="w-full mt-1" type="range" min="0" max="100" value="${x.progression||0}" onchange="progress('objectifs','${x.id}',this.value)"><div class="flex gap-3 mt-3 text-sm"><button class="text-teal-600" onclick="showObjective('${x.id}')">✏️ Modifier</button><button class="text-red-600" onclick="remove('objectifs','${x.id}')">Supprimer</button></div></div>`).join(''):'<p class="text-slate-500">Aucun objectif.</p>';
+
+ const taskCard=x=>`<div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3 flex gap-3 items-start"><button onclick="toggleTask('${x.id}',${!!x.terminee})" class="text-xl mt-1">${x.terminee?'☑️':'⬜'}</button><div class="flex-1"><div class="flex justify-between gap-2"><h3 class="font-bold ${x.terminee?'line-through opacity-60':''}">${esc(x.titre)}</h3><span class="text-xs px-2 py-1 rounded-full ${x.priorite==='urgente'?'bg-red-100 text-red-700':x.priorite==='haute'?'bg-orange-100 text-orange-700':'bg-slate-100 text-slate-600'}">${esc(x.priorite||'moyenne')}</span></div><p class="text-sm text-slate-500">${esc(x.description||'')}</p><div class="text-xs text-slate-500 mt-2">📅 ${dateFr(x.date_echeance||x.date_tache)} ${x.budget?` · 💰 ${money(x.budget)}`:''}</div><div class="mt-2"><div class="flex justify-between text-xs"><span>Progression</span><span>${x.progression||0}%</span></div><input class="w-full" type="range" min="0" max="100" value="${x.progression||0}" onchange="progress('taches','${x.id}',this.value)"></div><div class="text-sm mt-2"><button class="text-teal-600" onclick="showTask('${x.id}')">✏️ Modifier</button><button class="text-red-600 ml-3" onclick="remove('taches','${x.id}')">Supprimer</button></div></div></div>`;
+ const tSorted=t.slice().sort((a,b)=>(a.date_echeance||'9999').localeCompare(b.date_echeance||'9999'));
+ const withProj=data.projets.map(pr=>({proj:pr,items:tSorted.filter(x=>x.projet_id===pr.id)})).filter(g=>g.items.length);
+ const noProj=tSorted.filter(x=>!x.projet_id||!data.projets.some(pr=>pr.id===x.projet_id));
+ let taskHtml='';
+ withProj.forEach(g=>{const rem=projectRemaining(g.proj);taskHtml+=`<div class="mb-4"><div class="flex items-center justify-between gap-2 mb-2 pl-1 border-l-4 border-teal-500"><h3 class="font-bold pl-2">📁 ${esc(g.proj.nom)} <span class="text-xs font-normal text-slate-500">(${g.items.length} tâche${g.items.length>1?'s':''})</span></h3>${g.proj.budget?`<span class="text-xs ${rem<0?'text-red-600':'text-emerald-600'} pr-1">Restant : ${money(rem)}</span>`:''}</div><div class="space-y-3">${g.items.map(taskCard).join('')}</div></div>`});
+ if(noProj.length)taskHtml+=`<div class="mb-4"><h3 class="font-bold mb-2 pl-1 border-l-4 border-slate-300 pl-2 text-slate-500">📄 Sans projet <span class="text-xs font-normal">(${noProj.length})</span></h3><div class="space-y-3">${noProj.map(taskCard).join('')}</div></div>`;
+ $('taskList').innerHTML=t.length?taskHtml:'<p class="text-slate-500">Aucune tâche.</p>';
+
+ renderExcelTable();
+ renderDocuments();
+ renderBizPlan();
+
+ $('projectList').innerHTML=p.length?p.map(x=>{const related=t.filter(z=>z.projet_id===x.id);const spent=projectSpent(x.id),rem=projectRemaining(x);return `<div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3"><div class="flex justify-between"><h3 class="font-bold">📁 ${esc(x.nom)}</h3><span class="text-xs">${related.length} tâche(s)</span></div><p class="text-sm text-slate-500 mt-1">${esc(x.description||'')}</p>${x.budget?`<div class="text-xs mt-2 grid grid-cols-3 gap-1"><div>Budget<br><b>${money(x.budget)}</b></div><div>Dépensé<br><b>${money(spent)}</b></div><div>Restant<br><b class="${rem<0?'text-red-600':'text-emerald-600'}">${money(rem)}</b></div></div>`:''} ${x.date_fin?`<div class="text-xs text-slate-500 mt-1">📅 ${dateFr(x.date_fin)}</div>`:''}<div class="mt-2 flex justify-between text-xs"><span>Progression</span><b>${x.progression||0}%</b></div><input class="w-full" type="range" min="0" max="100" value="${x.progression||0}" onchange="progress('projets','${x.id}',this.value)">${related.length?`<details class="mt-2"><summary class="text-xs text-slate-500 cursor-pointer">Voir les ${related.length} tâche(s)</summary><div class="mt-2 space-y-1">${related.map(rt=>`<div class="flex items-center justify-between gap-2 text-xs bg-slate-50 dark:bg-slate-800 rounded px-2 py-1"><span class="${rt.terminee?'line-through opacity-60':''}">${rt.terminee?'☑️':'⬜'} ${esc(rt.titre)}</span>${rt.budget?`<span class="text-slate-500 shrink-0">${money(rt.budget)}</span>`:''}</div>`).join('')}</div></details>`:''}<div class="mt-2 text-sm"><button class="text-teal-600" onclick="showProject('${x.id}')">✏️ Modifier</button><button class="text-red-600 ml-3" onclick="remove('projets','${x.id}')">Supprimer</button>${x.business_plan_path?`<button class="text-indigo-600 ml-3" onclick="downloadBusinessPlan('${esc(x.business_plan_path)}','${esc(x.business_plan_name||'plan-affaires')}')">📄 Plan d'affaires</button>`:''}</div></div>`}).join(''):'<p class="text-slate-500">Aucun projet.</p>';
+
+ $('planningList').innerHTML=pl.length?pl.slice().sort((a,b)=>(a.date_planifiee+a.heure_debut).localeCompare(b.date_planifiee+b.heure_debut)).map(x=>`<div class="p-3 border rounded-xl dark:border-slate-700"><div class="flex justify-between"><h3 class="font-bold">${esc(x.titre)}</h3><span class="text-xs">${esc(x.statut)}</span></div><p class="text-sm text-slate-500">🗓️ ${dateFr(x.date_planifiee)} ${x.heure_debut?'à '+x.heure_debut:''}${x.heure_fin?' – '+x.heure_fin:''}</p><p class="text-sm mt-1">${esc(x.description||'')}</p><div class="mt-3 text-sm"><button class="text-teal-600" onclick="showPlanning('${x.id}')">Modifier</button><button class="text-red-600 ml-3" onclick="remove('planning','${x.id}')">Supprimer</button></div></div>`).join(''):'<p class="text-slate-500">Aucun événement.</p>';
+
+ $('reminderList').innerHTML=r.length?r.map(x=>`<div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3"><div class="flex justify-between items-start gap-2"><h3 class="font-bold">⏰ ${esc(x.titre)}</h3><div class="flex gap-1 items-center"><span class="text-xs px-2 py-0.5 rounded-full ${x.priorite==='urgente'?'bg-red-100 text-red-700':x.priorite==='faible'?'bg-slate-100 text-slate-600':'bg-amber-100 text-amber-700'}">${esc(x.priorite||'moyenne')}</span><span class="text-xs ${x.is_active?'text-green-600':'text-slate-400'}">${x.is_active?'Actif':'Inactif'}</span></div></div><p class="text-sm text-slate-500 mt-2">${dateFr(x.date_rappel)} à ${esc(x.heure_rappel)} · ${esc(x.recurrence||'aucune')}</p><p class="text-sm mt-1">${esc(x.description||'')}</p><div class="mt-3 text-sm"><button class="text-teal-600" onclick="showReminder('${x.id}')">Modifier</button><button class="text-red-600 ml-3" onclick="remove('rappel','${x.id}')">Supprimer</button></div></div>`).join(''):'<p class="text-slate-500">Aucun rappel.</p>';
+
+ $('noteList').innerHTML=n.length?n.map(x=>`<div class="bg-white dark:bg-slate-900 rounded-xl shadow p-3 ${x.epinglee?'ring-2 ring-indigo-400':''}"><div class="flex justify-between"><h3 class="font-bold">📝 ${esc(x.titre)}</h3>${x.epinglee?'📌':''}</div><p class="whitespace-pre-wrap text-sm mt-3">${esc(x.contenu)}</p><div class="text-xs text-slate-500 mt-3">${(x.tags||[]).map(t=>'#'+esc(t)).join(' ')}</div><div class="mt-3 text-sm"><button class="text-teal-600" onclick="showNote('${x.id}')">Modifier</button><button class="text-red-600 ml-3" onclick="remove('notes','${x.id}')">Supprimer</button></div></div>`).join(''):'<p class="text-slate-500">Aucune note.</p>';
+
+ $('dashProjectList').innerHTML=p.length?p.map(x=>{const rem=projectRemaining(x);return `<div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm"><div class="flex justify-between gap-2"><b class="truncate">📁 ${esc(x.nom)}</b><span class="text-xs shrink-0">${x.progression||0}%</span></div>${x.budget?`<div class="text-xs text-slate-500 mt-1">Restant : <span class="${rem<0?'text-red-600':'text-emerald-600'} font-medium">${money(rem)}</span></div>`:''}</div>`}).join(''):'<p class="text-slate-500 text-sm">Aucun projet.</p>';
+ renderCharts();
+}
+let excelSelected=new Set();
+function excelFilteredSorted(){
+ const q=($('excelSearch')?.value||'').toLowerCase().trim();
+ const fs=$('excelFilterStatut')?.value||'';
+ const fp=$('excelFilterPrio')?.value||'';
+ let rows=data.taches.filter(x=>(!q||(x.titre||'').toLowerCase().includes(q))&&(!fs||x.statut===fs)&&(!fp||x.priorite===fp));
+ const {col,dir}=excelSort;
+ rows=rows.slice().sort((a,b)=>{
+  let va=a[col],vb=b[col];
+  if(col==='projet_id'){va=(data.projets.find(p=>p.id===a.projet_id)||{}).nom||'';vb=(data.projets.find(p=>p.id===b.projet_id)||{}).nom||''}
+  if(col==='budget'||col==='progression'){va=Number(va||0);vb=Number(vb||0)}
+  else{va=String(va??'');vb=String(vb??'')}
+  if(va<vb)return dir==='asc'?-1:1;
+  if(va>vb)return dir==='asc'?1:-1;
+  return 0;
+ });
+ return rows;
+}
+function excelUpdateBulkBar(){
+ const n=excelSelected.size;
+ $('excelBulkBar').classList.toggle('hidden',n===0);
+ $('excelBulkCount').textContent=`${n} sélectionnée(s)`;
+}
+function renderExcelTable(){
+ const rows=excelFilteredSorted();
+ const prioOpts=[['urgente','Urgente'],['haute','Haute'],['moyenne','Moyenne'],['faible','Faible']];
+ const statutOpts=[['a_faire','À faire'],['en_cours','En cours'],['complete','Complète']];
+ const projOpts=[['','—'],...data.projets.map(p=>[p.id,p.nom])];
+ const opt=(opts,val)=>opts.map(o=>`<option value="${o[0]}" ${o[0]===(val||'')?'selected':''}>${o[1]}</option>`).join('');
+ // Purge selected ids no longer present (e.g. filtered out or deleted)
+ const visibleIds=new Set(rows.map(r=>r.id));
+ [...excelSelected].forEach(id=>{if(!data.taches.some(t=>t.id===id))excelSelected.delete(id)});
+ $('excelBody').innerHTML=rows.length?rows.map(x=>{
+  const proj=data.projets.find(pr=>pr.id===x.projet_id);
+  const remain=proj&&proj.budget?Number(proj.budget)-projectSpent(proj.id):null;
+  const budgetTitle=remain!==null?`Restant sur "${esc(proj.nom)}" : ${money(remain)}`:'';
+  return `<tr class="border-t dark:border-slate-800" data-id="${x.id}">
+  <td class="p-1 text-center"><input type="checkbox" class="excelRowCheck" data-id="${x.id}" ${excelSelected.has(x.id)?'checked':''}></td>
+  <td class="p-1"><input value="${esc(x.titre||'')}" class="excel-cell w-full p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700" data-field="titre" data-debounce="1"></td>
+  <td class="p-1"><select class="excel-cell w-full p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700" data-field="priorite">${opt(prioOpts,x.priorite||'moyenne')}</select></td>
+  <td class="p-1"><input type="number" step="0.01" value="${x.budget??''}" title="${budgetTitle}" class="excel-cell w-24 p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700 ${remain!==null&&remain<0?'border-red-400':''}" data-field="budget"></td>
+  <td class="p-1"><select class="excel-cell w-full p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700" data-field="projet_id">${opt(projOpts,x.projet_id||'')}</select></td>
+  <td class="p-1"><input type="number" min="0" max="100" value="${x.progression||0}" class="excel-cell w-20 p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700" data-field="progression"></td>
+  <td class="p-1"><input type="date" value="${x.date_echeance||''}" class="excel-cell w-full p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700" data-field="date_echeance"></td>
+  <td class="p-1"><select class="excel-cell w-full p-1.5 border rounded dark:bg-slate-800 dark:border-slate-700" data-field="statut">${opt(statutOpts,x.statut||'a_faire')}</select></td>
+  <td class="p-1 text-center"><button class="text-red-600" onclick="excelDeleteRow('${x.id}')" title="Supprimer">🗑️</button></td>
+ </tr>`}).join(''):'<tr><td colspan="9" class="p-4 text-center text-slate-500">Aucune ligne. Cliquez sur « + Ajouter une ligne ».</td></tr>';
+ let debounceTimers={};
+ document.querySelectorAll('#excelBody .excel-cell').forEach(el=>{
+  if(el.dataset.debounce){
+   el.addEventListener('input',()=>{
+    const id=el.closest('tr').dataset.id,field=el.dataset.field,val=el.value;
+    clearTimeout(debounceTimers[id+field]);
+    debounceTimers[id+field]=setTimeout(()=>excelUpdateCell(id,field,val),500);
+   });
+  }else{
+   el.addEventListener('change',()=>excelUpdateCell(el.closest('tr').dataset.id,el.dataset.field,el.value));
+  }
+ });
+ document.querySelectorAll('.excelRowCheck').forEach(cb=>{
+  cb.addEventListener('change',()=>{
+   if(cb.checked)excelSelected.add(cb.dataset.id);else excelSelected.delete(cb.dataset.id);
+   $('excelSelectAll').checked=rows.length>0&&rows.every(r=>excelSelected.has(r.id));
+   excelUpdateBulkBar();
+  });
+ });
+ $('excelSelectAll').checked=rows.length>0&&rows.every(r=>excelSelected.has(r.id));
+ document.querySelectorAll('.sortArrow').forEach(s=>{s.textContent=s.dataset.col===excelSort.col?(excelSort.dir==='asc'?'▲':'▼'):''});
+ excelUpdateBulkBar();
+ $('excelTotalCount').textContent=`${rows.length} ligne(s)`;
+ $('excelTotalBudget').textContent=money(rows.reduce((s,x)=>s+Number(x.budget||0),0));
+ $('excelTotalProgress').textContent=rows.length?`${Math.round(rows.reduce((s,x)=>s+(x.progression||0),0)/rows.length)}% moyen`:'';
+}
+async function excelUpdateCell(id,field,value){
+ const payload={};
+ if(field==='budget')payload.budget=value===''?null:+value;
+ else if(field==='progression')payload.progression=Math.max(0,Math.min(100,+value||0));
+ else if(field==='projet_id')payload.projet_id=value||null;
+ else if(field==='date_echeance')payload.date_echeance=value||null;
+ else payload[field]=value;
+ const {error}=await db.from('taches').update(payload).eq('id',id).eq('user_id',user.id);
+ if(error){alert('Erreur Supabase: '+error.message);return}
+ const t=data.taches.find(x=>x.id===id);if(t)Object.assign(t,payload);
+ render();
+}
+async function excelAddRow(){
+ const payload={user_id:user.id,titre:'Nouvelle tâche',priorite:'moyenne',statut:'a_faire',progression:0,date_echeance:today()};
+ const {data:inserted,error}=await db.from('taches').insert(payload).select();
+ if(error){alert('Erreur Supabase: '+error.message);return}
+ if(inserted&&inserted[0])data.taches.unshift(inserted[0]);
+ render();
+}
+async function excelDeleteRow(id){
+ if(!confirm('Supprimer cette ligne ?'))return;
+ const {error}=await db.from('taches').delete().eq('id',id).eq('user_id',user.id);
+ if(error){alert(error.message);return}
+ data.taches=data.taches.filter(x=>x.id!==id);excelSelected.delete(id);
+ render();
+}
+async function excelDeleteSelected(){
+ const ids=[...excelSelected];if(!ids.length)return;
+ if(!confirm(`Supprimer ${ids.length} ligne(s) sélectionnée(s) ?`))return;
+ const {error}=await db.from('taches').delete().in('id',ids).eq('user_id',user.id);
+ if(error){alert(error.message);return}
+ data.taches=data.taches.filter(x=>!ids.includes(x.id));excelSelected.clear();
+ render();
+}
+function excelExportCSV(){
+ const rows=excelFilteredSorted();
+ const head=['Tâche','Priorité','Budget','Projet','Progression','Date','Statut'];
+ const lines=[head.join(',')];
+ rows.forEach(x=>{
+  const proj=(data.projets.find(p=>p.id===x.projet_id)||{}).nom||'';
+  const cells=[x.titre||'',x.priorite||'',x.budget??'',proj,x.progression||0,x.date_echeance||'',x.statut||''];
+  lines.push(cells.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(','));
+ });
+ const blob=new Blob(['\uFEFF'+lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download='tableau_excel.csv';a.click();URL.revokeObjectURL(url);
+}
+document.querySelectorAll('#excel th[data-sort]').forEach(th=>{
+ th.onclick=()=>{
+  const col=th.dataset.sort;
+  if(excelSort.col===col)excelSort.dir=excelSort.dir==='asc'?'desc':'asc';
+  else excelSort={col,dir:'asc'};
+  renderExcelTable();
+ };
+});
+$('excelAddRow').onclick=excelAddRow;
+$('excelExport').onclick=excelExportCSV;
+$('excelSearch').oninput=renderExcelTable;
+$('excelFilterStatut').onchange=renderExcelTable;
+$('excelFilterPrio').onchange=renderExcelTable;
+$('excelBulkDelete').onclick=excelDeleteSelected;
+$('excelSelectAll').onchange=()=>{
+ const rows=excelFilteredSorted();
+ if($('excelSelectAll').checked)rows.forEach(r=>excelSelected.add(r.id));
+ else rows.forEach(r=>excelSelected.delete(r.id));
+ renderExcelTable();
+};
+
+function renderCharts(){
+ const avg=(arr)=>arr.length?Math.round(arr.reduce((s,x)=>s+(x.progression||0),0)/arr.length):0;
+ const dark=document.documentElement.classList.contains('dark'),ticks=dark?'#cbd5e1':'#334155';
+ charts.progress?.destroy();charts.progress=new Chart($('progressChart'),{type:'bar',data:{labels:['Objectifs','Tâches','Projets'],datasets:[{label:'Progression %',data:[avg(data.objectifs),avg(data.taches),avg(data.projets)]}]},options:{scales:{y:{min:0,max:100,ticks:{color:ticks}}},plugins:{legend:{display:false}}}});
+ const done=data.taches.filter(x=>x.terminee||x.statut==='complete').length,active=data.taches.length-done;
+ charts.task?.destroy();charts.task=new Chart($('taskChart'),{type:'doughnut',data:{labels:['Terminées','À faire'],datasets:[{data:[done,active]}]},options:{plugins:{legend:{position:'bottom',labels:{color:ticks}}}}});
+ const budgets=data.projets.map(x=>({n:x.nom,budget:Number(x.budget||0),spent:projectSpent(x.id)})).filter(x=>x.budget>0);
+ const total=budgets.reduce((s,x)=>s+x.budget,0);$('budgetTotal').textContent=money(total);
+ charts.budget?.destroy();charts.budget=new Chart($('budgetChart'),{type:'bar',data:{labels:budgets.map(x=>x.n),datasets:[{label:'Budget global',data:budgets.map(x=>x.budget),backgroundColor:'#c7d2fe'},{label:'Dépensé (tâches)',data:budgets.map(x=>x.spent),backgroundColor:'#4f46e5'}]},options:{plugins:{legend:{display:true,labels:{color:ticks}}}}});
+}
+async function loadData(){
+ if(!user)return;setSync(false);
+ const tables=['objectifs','taches','projets','planning','rappel','notes'];
+ const results=await Promise.all(tables.map(t=>db.from(t).select('*').eq('user_id',user.id).order('created_at',{ascending:false})));
+ let failed=results.find(x=>x.error);if(failed){console.error(failed.error);setSync(false);alert('Erreur de chargement Supabase: '+failed.error.message);return}
+ data.objectifs=results[0].data||[];data.taches=results[1].data||[];data.projets=results[2].data||[];data.planning=results[3].data||[];data.rappels=results[4].data||[];data.notes=results[5].data||[];
+ // Table optionnelle (plan d'affaires structuré) : ne bloque pas le reste si absente/pas encore créée
+ const bp=await db.from('business_plans').select('*').eq('user_id',user.id);
+ data.businessPlans=bp.error?[]:(bp.data||[]);
+ if(bp.error)console.warn('Table business_plans indisponible :',bp.error.message);
+ render();setSync(true);checkReminders();
+}
+function checkReminders(){
+ if(!('Notification'in window)||Notification.permission!=='granted')return;
+ const now=new Date(), ds=now.toISOString().slice(0,10), tm=now.toTimeString().slice(0,5);
+ data.rappels.filter(r=>r.is_active&&r.date_rappel===ds&&r.heure_rappel===tm&&!r.notification_envoyee).forEach(async r=>{new Notification('⏰ '+r.titre,{body:r.description||'Rappel'});await db.from('rappel').update({notification_envoyee:true}).eq('id',r.id).eq('user_id',user.id)});
+}
+function globalSearchRun(){
+ const q=$('globalSearch').value.toLowerCase().trim();
+ if(!q){$('globalSearchResults').classList.add('hidden');return}
+ const results=[];
+ data.taches.forEach(x=>(x.titre||'').toLowerCase().includes(q)&&results.push({icon:'✅',label:x.titre,tab:'taches'}));
+ data.objectifs.forEach(x=>(x.titre||'').toLowerCase().includes(q)&&results.push({icon:'🎯',label:x.titre,tab:'objectifs'}));
+ data.projets.forEach(x=>(x.nom||'').toLowerCase().includes(q)&&results.push({icon:'📁',label:x.nom,tab:'projets'}));
+ data.notes.forEach(x=>((x.titre||'')+(x.contenu||'')).toLowerCase().includes(q)&&results.push({icon:'📝',label:x.titre,tab:'notes'}));
+ data.planning.forEach(x=>(x.titre||'').toLowerCase().includes(q)&&results.push({icon:'🗓️',label:x.titre,tab:'planning'}));
+ data.rappels.forEach(x=>(x.titre||'').toLowerCase().includes(q)&&results.push({icon:'⏰',label:x.titre,tab:'rappels'}));
+ const top=results.slice(0,8);
+ $('globalSearchResults').innerHTML=top.length?top.map(r=>`<button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2" data-tab="${r.tab}">${r.icon} <span class="truncate">${esc(r.label||'(sans titre)')}</span></button>`).join(''):'<div class="px-3 py-2 text-sm text-slate-500">Aucun résultat</div>';
+ $('globalSearchResults').classList.remove('hidden');
+ $('globalSearchResults').querySelectorAll('button[data-tab]').forEach(b=>b.onclick=()=>{openTab(b.dataset.tab);$('globalSearchResults').classList.add('hidden');$('globalSearch').value=''});
+}
+$('globalSearch').oninput=globalSearchRun;
+document.addEventListener('click',e=>{if(!e.target.closest('#globalSearch')&&!e.target.closest('#globalSearchResults'))$('globalSearchResults').classList.add('hidden')});
+
+let realtimeDebounce=null;
+function scheduleReload(){clearTimeout(realtimeDebounce);realtimeDebounce=setTimeout(loadData,400)}
+
+let inactivityTimer=null;
+const INACTIVITY_LIMIT_MS=5*60*1000;
+async function handleInactivityTimeout(){
+ if(!user)return;
+ await db.auth.signOut();
+ alert('Session fermée après 5 minutes d’inactivité.');
+ location.reload();
+}
+function resetInactivityTimer(){
+ if(!user)return;
+ clearTimeout(inactivityTimer);
+ inactivityTimer=setTimeout(handleInactivityTimeout,INACTIVITY_LIMIT_MS);
+}
+['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(evt=>document.addEventListener(evt,resetInactivityTimer,{passive:true}));
+
+// ==== Option d'affichage : Mosaïque / Liste ====
+const VIEW_TARGETS=['objList','projectList','reminderList','noteList'];
+const VIEW_GRID_CLASS='grid md:grid-cols-2 gap-3';
+const VIEW_LIST_CLASS='flex flex-col gap-3';
+function applyViewMode(mode){
+ VIEW_TARGETS.forEach(id=>{const el=$(id);if(el)el.className=mode==='list'?VIEW_LIST_CLASS:VIEW_GRID_CLASS});
+ localStorage.setItem('organisateur_view',mode);
+ const btn=$('viewToggle');if(btn)btn.textContent=mode==='list'?'☰':'🔲';
+}
+function initViewMode(){applyViewMode(localStorage.getItem('organisateur_view')||'grid')}
+$('viewToggle').onclick=()=>{const cur=localStorage.getItem('organisateur_view')||'grid';applyViewMode(cur==='grid'?'list':'grid')};
+initViewMode();
+
+$('addObj').onclick=()=>showObjective();$('addTask').onclick=()=>showTask();$('addProject').onclick=()=>showProject();$('addPlanning').onclick=()=>showPlanning();$('addReminder').onclick=()=>showReminder();$('addNote').onclick=()=>showNote();
+$('darkToggle').onclick=()=>{const d=document.documentElement.classList.toggle('dark');localStorage.setItem('organisateur_dark',d?'1':'0');$('darkToggle').textContent=d?'☀️':'🌙';renderCharts()};
+function applyDark(){const d=localStorage.getItem('organisateur_dark')==='1';document.documentElement.classList.toggle('dark',d);$('darkToggle').textContent=d?'☀️':'🌙'}applyDark();
+$('refreshBtn').onclick=loadData;$('logoutBtn').onclick=async()=>{await db.auth.signOut();location.reload()};
+$('showForgotBtn').onclick=()=>{$('loginForm').classList.add('hidden');$('forgotForm').classList.remove('hidden')};
+$('backToLoginBtn').onclick=()=>{$('forgotForm').classList.add('hidden');$('loginForm').classList.remove('hidden')};
+$('sendResetBtn').onclick=async()=>{const email=$('forgotEmail').value.trim();if(!email)return;const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo:location.href});$('forgotMsg').textContent=error?error.message:'Lien envoyé. Vérifie ton courriel.'};
+$('saveNewPasswordBtn').onclick=async()=>{const p=$('newPassword').value;if(p.length<6)return $('resetMsg').textContent='Minimum 6 caractères.';const {error}=await db.auth.updateUser({password:p});$('resetMsg').textContent=error?error.message:'Mot de passe mis à jour.'};
+$('loginBtn').onclick=async()=>{const email=$('loginEmail').value.trim(),password=$('loginPassword').value;$('loginError').classList.add('hidden');const {error}=await db.auth.signInWithPassword({email,password});if(error){$('loginError').textContent=error.message;$('loginError').classList.remove('hidden')}else boot()};
+async function boot(){const {data:{session}}=await db.auth.getSession();if(!session){$('loginScreen').classList.remove('hidden');return}user=session.user;$('loginScreen').classList.add('hidden');$('appRoot').classList.remove('hidden');$('welcomeUser').textContent=user.email||'';await loadData();db.channel('organisateur-v3').on('postgres_changes',{event:'*',schema:'public'},()=>scheduleReload()).subscribe();setInterval(checkReminders,30000);resetInactivityTimer()}
+db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'){$('loginScreen').classList.remove('hidden');$('appRoot').classList.add('hidden');$('loginForm').classList.add('hidden');$('forgotForm').classList.add('hidden');$('resetForm').classList.remove('hidden')}});
+boot();
+</script>
+</body>
+</html>
