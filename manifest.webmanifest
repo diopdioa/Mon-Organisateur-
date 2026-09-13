@@ -1,10 +1,15 @@
 {
-  "name": "Mon Organiseur",
-  "short_name": "Organiseur",
+  "name": "Orbis",
+  "short_name": "Orbis",
+  "description": "Organisateur personnel et professionnel : objectifs, tâches, projets, budgets et plans d'affaires.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f4f6fb",
-  "theme_color": "#4f46e5",
-  "lang": "fr",
-  "description": "Organiseur personnel avec tâches, objectifs et rappels."
+  "orientation": "portrait-primary",
+  "background_color": "#eef2f7",
+  "theme_color": "#0f766e",
+  "icons": [
+    { "src": "orbis_icon_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "orbis_icon_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }
