@@ -1,15 +1,17 @@
 {
-  "name": "Orbis",
+  "name": "Orbis — Gestion de projets",
   "short_name": "Orbis",
-  "description": "Organisateur personnel et professionnel : objectifs, tâches, projets, budgets et plans d'affaires.",
+  "description": "Suivi de projets, tâches, objectifs et documents.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
-  "background_color": "#eef2f7",
+  "orientation": "any",
+  "background_color": "#0f172a",
   "theme_color": "#0f766e",
+  "lang": "fr-CA",
   "icons": [
-    { "src": "orbis_icon_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "orbis_icon_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    { "src": "orbis_icon_192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "orbis_icon_512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "orbis_icon_512_maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
