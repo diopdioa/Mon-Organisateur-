@@ -1,4 +1,4 @@
-const CACHE_NAME = 'orbis-cache-v3';
+const CACHE_NAME = 'orbis-cache-v4';
 const APP_SHELL = [
   './index.html',
   './manifest.webmanifest',
