@@ -1,0 +1,102 @@
+/* ============================================================
+   Orbis — feuille de style personnalisée
+   Contient les composants, animations et réglages qui ne sont PAS
+   des utilitaires Tailwind (ceux-là sont dans tailwind.css, généré
+   séparément par le build — ne pas éditer tailwind.css à la main).
+   ============================================================ */
+:root{--bg1:#faf3d9;--bg2:#eef4e9;--bg3:#e3ecf3}
+body{transition:.2s;font-family:'Inter',system-ui,sans-serif;background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 45%,var(--bg3) 100%);background-attachment:fixed}
+.dark body{background:linear-gradient(160deg,#0a0f1c 0%,#0c1426 50%,#0a1220 100%);background-attachment:fixed}
+h1,h2,h3,.font-display{font-family:'Plus Jakarta Sans',system-ui,sans-serif}
+.card{transition:.2s}.modal{backdrop-filter:blur(4px)}
+.progress{height:8px;border-radius:99px;background:#d2ebed;overflow:hidden}.progress>span{display:block;height:100%;border-radius:99px}
+.dark .progress{background:#2b4d5a}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#7daeba;border-radius:10px}
+@keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.orbis-orbit{transform-origin:12px 12px;animation:orbisSpin 7s linear infinite}
+@keyframes orbisSpin{to{transform:rotate(360deg)}}
+#espaceSelect option{color:#fff;background:#0f766e}
+.tab-btn{position:relative;z-index:1;transition:color .25s ease,transform .15s ease,border-color .2s ease;color:#3a6370;border:1px solid transparent}
+.tab-btn:hover{background:#ffffff;color:#0f766e;border-color:#99f6e4}
+.tab-btn:active{transform:scale(.94)}
+.dark .tab-btn{color:#b3dade}.dark .tab-btn:hover{background:#134e4a;color:#5eead4;border-color:#115e59}
+.tab-btn.tab-accent{color:#0f766e;font-weight:600}
+.dark .tab-btn.tab-accent{color:#5eead4}
+.tab-btn.tab-accent:hover{background:#f0fdfa;color:#0f766e;border-color:#99f6e4}
+.dark .tab-btn.tab-accent:hover{background:#134e4a;color:#5eead4;border-color:#115e59}
+.tab-btn.tab-accent.active{color:#fff}
+.tab-btn.active{background:transparent;color:#fff;border-color:rgba(255,255,255,.3)}
+.tab-btn.active:hover{background:transparent;color:#fff;border-color:rgba(255,255,255,.4)}
+#tabNavRow{position:relative}
+#tabNavWrap{border:1px solid #cfe3e6;background:rgba(255,255,255,.88);box-shadow:0 4px 14px rgba(15,118,110,.08),0 1px 2px rgba(15,23,42,.05),inset 0 1px 0 #fff;border-radius:1.25rem;backdrop-filter:saturate(1.2) blur(6px)}
+.dark #tabNavWrap{border-color:#2b4d5a;background:rgba(16,35,49,.75);box-shadow:0 4px 14px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.04)}
+#tabIndicator{position:absolute;top:0;left:0;width:0;height:0;border-radius:9999px;background:linear-gradient(135deg,#14b8a6,#0f766e);box-shadow:0 2px 10px rgba(15,118,110,.4),inset 0 1px 0 rgba(255,255,255,.15);opacity:0;pointer-events:none;z-index:0;transition:left .38s cubic-bezier(.34,1.56,.64,1),top .38s cubic-bezier(.34,1.56,.64,1),width .38s cubic-bezier(.34,1.56,.64,1),height .38s cubic-bezier(.34,1.56,.64,1),opacity .25s ease}
+nav.nav-enter{animation:navSlideIn .55s cubic-bezier(.16,1,.3,1)}
+@keyframes navSlideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.no-scrollbar{scrollbar-width:none;-ms-overflow-style:none}
+.no-scrollbar::-webkit-scrollbar{display:none}
+@media (max-width:640px){input,select,textarea{font-size:16px}}
+/* ==== Adaptation téléphone / application épinglée ==== */
+html,body{max-width:100%;overflow-x:clip}
+#appRoot,#loginScreen{min-height:100vh}
+@supports (height:1dvh){#appRoot,#loginScreen{min-height:100dvh}}
+#appRoot{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom)}
+#modal>div{max-height:90vh}#fileViewer>div{height:92vh}
+@supports (height:1dvh){#modal>div{max-height:90dvh}#fileViewer>div{height:92dvh}}
+@media(max-width:639px){
+ #tabNavRow{gap:.25rem;padding:.3rem}
+ #tabNavRow .tab-btn{padding:.4rem .7rem;font-size:.8rem;gap:.3rem}
+ #tabNavRow .tab-btn svg{width:.95rem;height:.95rem}
+ #tabNavWrap{border-radius:1rem;padding-left:.25rem;padding-right:.25rem}
+ #navBizplanMenu,#navPlanningMenu{position:fixed;left:.75rem;right:.75rem;width:auto;transform:none!important;translate:none!important}
+ #spaceActionsMenu{max-width:calc(100vw - 1.5rem)}
+ .dashboard-hero{padding:16px}
+ section.tab h2{font-size:1.1rem}
+ #modal>div{padding:1rem}
+}
+@supports (padding:max(0px)){header{padding-top:env(safe-area-inset-top)}}
+
+@keyframes orbitSlow{from{transform:rotate(15deg)}to{transform:rotate(375deg)}}
+@keyframes orbitMid{from{transform:rotate(-35deg)}to{transform:rotate(325deg)}}
+@keyframes orbitFast{from{transform:rotate(70deg)}to{transform:rotate(430deg)}}
+@keyframes hubPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.login-orbit-slow{animation:orbitSlow 34s linear infinite;transform-origin:120px 120px}
+.login-orbit-mid{animation:orbitMid 22s linear infinite reverse;transform-origin:120px 120px}
+.login-orbit-fast{animation:orbitFast 14s linear infinite;transform-origin:120px 120px}
+.login-hub{animation:hubPulse 3.2s ease-in-out infinite;transform-origin:120px 120px}
+.login-fade-in{animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) both}
+.login-fade-in-delay{animation:fadeSlideUp .7s cubic-bezier(.22,1,.36,1) .15s both}
+@media (prefers-reduced-motion:reduce){.login-orbit-slow,.login-orbit-mid,.login-orbit-fast,.login-hub,.login-fade-in,.login-fade-in-delay{animation:none}}
+input[type=range]{accent-color:#0d9488}
+input[type=range].pro-range{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:99px;cursor:pointer;outline:none;background:linear-gradient(90deg,#0f766e 0%,#1e3a8a var(--val,0%),#d2ebed var(--val,0%),#d2ebed 100%)}
+.dark input[type=range].pro-range{background:linear-gradient(90deg,#0f766e 0%,#1e3a8a var(--val,0%),#2b4d5a var(--val,0%),#2b4d5a 100%)}
+input[type=range].pro-range::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;margin-top:-3.5px;border-radius:50%;background:#fff;border:3px solid #1e3a8a;box-shadow:0 1px 4px rgba(15,23,42,.35);cursor:pointer}
+input[type=range].pro-range::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid #1e3a8a;box-shadow:0 1px 4px rgba(15,23,42,.35);cursor:pointer;border-width:3px}
+input[type=range].pro-range::-moz-range-track{height:8px;border-radius:99px;background:#d2ebed}
+.dark input[type=range].pro-range::-moz-range-track{background:#2b4d5a}
+input[type=range].pro-range::-moz-range-progress{height:8px;border-radius:99px;background:linear-gradient(90deg,#0f766e,#1e3a8a)}
+.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.docx-preview{color:#1b3542}
+.dark .docx-preview{color:#d2ebed}
+.docx-preview :is(h1,h2,h3){font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-weight:700;margin:1.1em 0 .5em;line-height:1.3}
+.docx-preview h1{font-size:1.5em}.docx-preview h2{font-size:1.25em}.docx-preview h3{font-size:1.1em}
+.docx-preview p{margin:.6em 0;line-height:1.65}
+.docx-preview ul,.docx-preview ol{margin:.5em 0 .8em 1.4em}
+.docx-preview li{margin:.2em 0}
+.docx-preview table{border-collapse:collapse;margin:.8em 0;width:100%}
+.docx-preview td,.docx-preview th{border:1px solid #b3dade;padding:5px 9px;font-size:.92em}
+.dark .docx-preview td,.dark .docx-preview th{border-color:#2b4d5a}
+.docx-preview img{max-width:100%;height:auto}
+.docx-preview a{color:#0f766e;text-decoration:underline}
+
+.brand-tint{background:linear-gradient(135deg,#ccfbf1 0%,#f0fdfa 55%,#cffafe 100%)}
+.dark .brand-tint{background:linear-gradient(135deg,#0c3733 0%,#102331 100%)}
+.dashboard-hero{background:linear-gradient(135deg,#ccfbf1 0%,#f0fdfa 55%,#cffafe 100%);border:1px solid rgba(15,118,110,.22)}
+.dark .dashboard-hero{background:linear-gradient(135deg,#0c3733 0%,#102331 100%);border-color:rgba(45,212,191,.28)}
+.dashboard-hero-logo{animation:hubPulse 4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.dashboard-hero-logo,.dashboard-hero .login-orbit-slow,.dashboard-hero .login-orbit-mid{animation:none}}
+.dashboard-kpi{position:relative;overflow:hidden;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}.dashboard-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--kpi,#0f766e);border-radius:4px 0 0 4px}.dashboard-kpi:hover{transform:translateY(-2px);box-shadow:0 10px 25px rgba(15,23,42,.08)}
+.kpi-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;font-weight:800;font-size:14px}
+.chart-card{min-width:0}.chart-wrap{position:relative;width:100%}.chart-progress{height:290px}.chart-donut{height:290px}.chart-budget{height:300px}.chart-badge{font-size:10px;font-weight:700;color:#528391;background:#f6fbfc;border:1px solid #d2ebed;border-radius:999px;padding:5px 8px;white-space:nowrap}.dark .chart-badge{color:#b3dade;background:#102331;border-color:#2b4d5a}
+@media(max-width:640px){.chart-progress,.chart-donut{height:250px}.chart-budget{height:260px}.dashboard-hero{padding:18px}}
