@@ -100,7 +100,7 @@ document.addEventListener('keydown',e=>{
  }
  if(e.key.toLowerCase()==='n'){
   const openId=document.querySelector('.tab:not(.hidden)')?.id;
-  const map={objectifs:'addObj',taches:'addTask',projets:'addProject',planning:'addPlanning',rappels:'addReminder',notes:'addNote'};
+  const map={objectifs:'addObj',taches:'addTask',projets:'addProject',planning:'addPlanning'};
   const btnId=map[openId];
   if(btnId&&$(btnId)){e.preventDefault();$(btnId).click();}
  }
@@ -109,7 +109,7 @@ document.addEventListener('keydown',e=>{
 function setSync(ok){const b=$('syncBadge');b.textContent=ok?'●':'●';b.title=ok?'Synchronisé':'Erreur de synchronisation';b.className='text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded-full whitespace-nowrap '+(ok?'text-emerald-300':'text-red-300')+' bg-white/20'}
 const NAV_GROUPS={
  bizplan:{btn:'navBizplanBtn',label:'navBizplanLabel',menu:'navBizplanMenu',def:"Plan d'affaires",tabs:{'bizplan':"Plan d'affaires",'excel':'Excel','rapport':'Rapport'}},
- planning:{btn:'navPlanningBtn',label:'navPlanningLabel',menu:'navPlanningMenu',def:'Planning',tabs:{'planning':'Planning','rappels':'Rappels','notes':'Notes'}}
+ planning:{btn:'navPlanningBtn',label:'navPlanningLabel',menu:'navPlanningMenu',def:'Planning',tabs:{'planning':'Planning'}}
 };
 // ==== Navigation : barre d'onglets et bascule entre sections ====
 function moveTabIndicator(){
@@ -213,6 +213,7 @@ function showProject(id=null){
  input('f_budget','Budget global',p.budget||'','number','step="0.01"')+
  (id&&p.budget?`<p class="text-xs text-slate-500 -mt-2 mb-3">Dépensé par les tâches liées : ${money(projectSpent(p.id))} · Restant : ${money(projectRemaining(p))}</p>`:'')+
  select('f_status','Statut',p.statut||'en_cours',[['en_cours','En cours'],['termine','Terminé'],['en_attente','En attente'],['annule','Annulé']])+
+ textarea('f_projnotes','Note',p.notes)+
  bizPlanBlock(p,id)+saveBtn);
  if(id)$('f_bizplan').onchange=async()=>{const files=[...$('f_bizplan').files];$('f_bizplan').value='';if(files.length)await uploadProjectDocs(id,files)};
  if(id&&$('bizPlanDropzone')){
@@ -222,7 +223,7 @@ function showProject(id=null){
   ['dragleave','drop'].forEach(evt=>zone.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();setActive(false)}));
   zone.addEventListener('drop',async e=>{const files=[...e.dataTransfer.files];if(files.length)await uploadProjectDocs(id,files)});
  }
- $('modalSave').onclick=async()=>{const pld={user_id:user.id,workspace_id:currentEspaceId,nom:$('f_nom').value.trim(),description:$('f_desc').value,date_debut:$('f_start').value||null,date_fin:$('f_end').value||null,budget:$('f_budget').value?+$('f_budget').value:null,statut:$('f_status').value};if(!pld.nom)return toast('Nom requis','warn');await save('projets',pld,id);};
+ $('modalSave').onclick=async()=>{const pld={user_id:user.id,workspace_id:currentEspaceId,nom:$('f_nom').value.trim(),description:$('f_desc').value,date_debut:$('f_start').value||null,date_fin:$('f_end').value||null,budget:$('f_budget').value?+$('f_budget').value:null,statut:$('f_status').value,notes:$('f_projnotes').value};if(!pld.nom)return toast('Nom requis','warn');await save('projets',pld,id);};
 }
 async function uploadBusinessPlan(projectId,file,statusElId='bizPlanStatus'){
  const MAX_SIZE=20*1024*1024;
@@ -889,25 +890,9 @@ function showPlanning(id=null){
  select('f_status','Statut',p.statut||'planifie',[['planifie','Planifié'],['termine','Terminé'],['annule','Annulé']])+saveBtn);
  $('modalSave').onclick=async()=>{const pld={user_id:user.id,workspace_id:currentEspaceId,titre:$('f_titre').value.trim(),description:$('f_desc').value,date_planifiee:$('f_date').value,heure_debut:$('f_h1').value||null,heure_fin:$('f_h2').value||null,lieu:$('f_lieu').value,statut:$('f_status').value};if(!pld.titre||!pld.date_planifiee)return toast('Titre et date requis','warn');await save('planning',pld,id);};
 }
-function showReminder(id=null){
- const r=id?data.rappels.find(x=>x.id===id):{};
- editing={type:'rappel',id};
- modal(id?'Modifier le rappel':'Nouveau rappel',
- input('f_titre','Titre',r.titre)+textarea('f_desc','Description',r.description)+
- input('f_date','Date',r.date_rappel||today(),'date')+input('f_hour','Heure',r.heure_rappel||'09:00','time')+
- select('f_task','Tâche liée',r.tache_id||'',taskOptions())+select('f_prio','Priorité',r.priorite||'moyenne',[['urgente','Urgente'],['moyenne','Moyenne'],['faible','Faible']])+
- select('f_rec','Récurrence',r.recurrence||'aucune',[['aucune','Aucune'],['quotidien','Quotidienne'],['hebdomadaire','Hebdomadaire'],['mensuel','Mensuelle']])+saveBtn);
- $('modalSave').onclick=async()=>{const p={user_id:user.id,workspace_id:currentEspaceId,titre:$('f_titre').value.trim(),description:$('f_desc').value,date_rappel:$('f_date').value||null,heure_rappel:$('f_hour').value,recurrence:$('f_rec').value,tache_id:$('f_task').value||null,priorite:$('f_prio').value,is_active:true};if(!p.titre)return toast('Titre requis','warn');await save('rappel',p,id);if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();};
-}
-function showNote(id=null){
- const n=id?data.notes.find(x=>x.id===id):{};
- editing={type:'notes',id};
- modal(id?'Modifier la note':'Nouvelle note',
- input('f_titre','Titre',n.titre)+textarea('f_content','Contenu',n.contenu)+
- `<label class="block text-sm font-medium mb-1">Tags</label><input id="f_tags" class="w-full p-2.5 border rounded-lg mb-3 dark:bg-slate-800 dark:border-slate-700" value="${esc((n.tags||[]).join(', '))}" placeholder="travail, idée, important">`+
- select('f_pin','Épinglée',n.epinglee?'true':'false',[['false','Non'],['true','Oui']])+saveBtn);
- $('modalSave').onclick=async()=>{const p={user_id:user.id,workspace_id:currentEspaceId,titre:$('f_titre').value.trim(),contenu:$('f_content').value.trim(),tags:$('f_tags').value.split(',').map(x=>x.trim()).filter(Boolean),epinglee:$('f_pin').value==='true'};if(!p.titre||!p.contenu)return toast('Titre et contenu requis','warn');await save('notes',p,id);};
-}
+// Les anciens formulaires globaux "Rappel" et "Note" ont été retirés avec leurs onglets.
+// Chaque projet porte maintenant sa propre note libre, directement dans son formulaire
+// (champ f_projnotes dans showProject(), colonne projets.notes).
 
 // ==== Mode hors ligne : cache local + file d'attente de synchronisation ====
 // Principe : les tables de données courantes (objectifs, tâches, projets, planning,
@@ -1094,6 +1079,7 @@ function render(){
    </div>
    <span class="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${st.cls}">${st.label}</span>
   </div>
+  ${x.notes?`<div class="text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/40 text-amber-800 dark:text-amber-200 rounded-lg px-2.5 py-2 flex gap-1.5"><svg viewBox="0 0 20 20" class="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5h12M4 9h12M4 13.5h7"/></svg><span class="whitespace-pre-wrap">${esc(x.notes)}</span></div>`:''}
 
   <details class="group">
    <summary class="text-xs font-semibold text-teal-600 cursor-pointer list-none flex items-center gap-1 select-none w-fit mt-1">
@@ -1582,9 +1568,8 @@ function globalSearchRun(inputId='globalSearch',resultsId='globalSearchResults')
  data.taches.forEach(x=>(x.titre||'').toLowerCase().includes(q)&&results.push({icon:'<svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M6.8 10.2l2 2 4.4-4.6"/></svg>',label:x.titre,tab:'taches'}));
  data.objectifs.forEach(x=>(x.titre||'').toLowerCase().includes(q)&&results.push({icon:'<svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6.4"/><circle cx="10" cy="10" r="3.3"/><circle cx="10" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg>',label:x.titre,tab:'objectifs'}));
  data.projets.forEach(x=>(x.nom||'').toLowerCase().includes(q)&&results.push({icon:'<svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.2a1 1 0 0 1 1-1h3.3l1.4 1.7H16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6.2z"/></svg>',label:x.nom,tab:'projets'}));
- data.notes.forEach(x=>((x.titre||'')+(x.contenu||'')).toLowerCase().includes(q)&&results.push({icon:'<svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 15.8l.3-2.4 8.1-8.1a1.3 1.3 0 0 1 1.9 0l.1.1a1.3 1.3 0 0 1 0 1.9l-8.1 8.1-2.3.4z"/><path d="M11.4 6.4l2 2"/></svg>',label:x.titre,tab:'notes'}));
+ data.projets.forEach(x=>(x.notes||'').toLowerCase().includes(q)&&results.push({icon:'<svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 15.8l.3-2.4 8.1-8.1a1.3 1.3 0 0 1 1.9 0l.1.1a1.3 1.3 0 0 1 0 1.9l-8.1 8.1-2.3.4z"/><path d="M11.4 6.4l2 2"/></svg>',label:'Note — '+x.nom,tab:'projets'}));
  data.planning.forEach(x=>(x.titre||'').toLowerCase().includes(q)&&results.push({icon:'<svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="4.4" width="13.6" height="12" rx="1.4"/><path d="M3.2 8h13.6"/><path d="M7 3v2.8M13 3v2.8"/></svg>',label:x.titre,tab:'planning'}));
- data.rappels.forEach(x=>(x.titre||'').toLowerCase().includes(q)&&results.push({icon:'<svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.6a4 4 0 0 0-4 4v2.1c0 .66-.24 1.3-.68 1.8l-.7.82c-.5.58-.1 1.48.66 1.48h9.44c.76 0 1.16-.9.66-1.48l-.7-.82a2.75 2.75 0 0 1-.68-1.8V7.6a4 4 0 0 0-4-4z"/><path d="M8.6 15.8a1.4 1.4 0 0 0 2.8 0"/></svg>',label:x.titre,tab:'rappels'}));
  const top=results.slice(0,8);
  const box=$(resultsId);
  box.innerHTML=top.length?top.map(r=>`<button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2" data-tab="${r.tab}">${r.icon} <span class="truncate">${esc(r.label||'(sans titre)')}</span></button>`).join(''):'<div class="px-3 py-2 text-sm text-slate-500">Aucun résultat</div>';
@@ -1644,7 +1629,7 @@ $('stayLoggedInBtn').onclick=()=>resetInactivityTimer();
 ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(evt=>document.addEventListener(evt,resetInactivityTimer,{passive:true}));
 
 // ==== Option d'affichage : Mosaïque / Liste ====
-const VIEW_TARGETS=['objList','projectList','reminderList','noteList'];
+const VIEW_TARGETS=['objList','projectList'];
 const VIEW_GRID_CLASS='grid md:grid-cols-2 gap-3';
 const VIEW_LIST_CLASS='flex flex-col gap-3';
 // ==== Préférences d'affichage (grille/liste, thème clair/sombre) ====
@@ -1724,7 +1709,7 @@ function applyTabVisibility(){
  if($('progressChartTitle'))$('progressChartTitle').innerHTML=$('progressChartTitle').innerHTML.replace(/Progression( par projet)?/,'Progression'+(shared?' par projet':''));
  if(shared){
   const openId=document.querySelector('.tab:not(.hidden)')?.id;
-  if(['excel','planning','rappels','notes'].includes(openId))openTab('dashboard');
+  if(['excel','planning'].includes(openId))openTab('dashboard');
  }
  requestAnimationFrame(moveTabIndicator);
 }
@@ -1825,7 +1810,7 @@ $('spaceActionsBtn').onclick=e=>{e.stopPropagation();$('spaceActionsMenu').class
 // et supabase_send_push.ts). Tant qu'elle n'est pas renseignée ici, le bouton
 // "Activer les notifications" explique pourquoi ça ne marche pas encore, plutôt
 // que d'échouer silencieusement.
-const VAPID_PUBLIC_KEY='REMPLACE_PAR_TA_CLE_PUBLIQUE_VAPID';
+const VAPID_PUBLIC_KEY='BE7D_y-xlRBDPaGivz14jP2V2Y8UITkfnpW1ubdBcB_w_s5eSbynrJoeU8sFxHYCiIiptfBdCTkG144yCEKZGRo';
 // PushManager.subscribe() attend la clé serveur en Uint8Array, pas en texte :
 // cette fonction convertit le format base64url renvoyé par `web-push generate-vapid-keys`.
 function urlBase64ToUint8Array(base64String){
@@ -1853,7 +1838,7 @@ $('enablePushBtn').onclick=()=>{$('spaceActionsMenu').classList.add('hidden');en
 if('serviceWorker' in navigator){
  // ?v=SW_BUILD force le navigateur (et le CDN de GitHub Pages) à retélécharger sw.js
  // au lieu de servir une copie mise en cache : à incrémenter à chaque modification de sw.js.
- const SW_BUILD='8';
+ const SW_BUILD='9';
  window.addEventListener('load',()=>{
   navigator.serviceWorker.register('./sw.js?v='+SW_BUILD).then(reg=>{
    reg.addEventListener('updatefound',()=>{

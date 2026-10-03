@@ -3,7 +3,7 @@
 // (2) recevoir et afficher les notifications push envoyées par le serveur
 // (rappels), (3) réagir au clic sur une notification pour rouvrir l'app.
 
-const CACHE_NAME = 'orbis-cache-v8';
+const CACHE_NAME = 'orbis-cache-v9';
 const APP_SHELL = [
   './index.html',
   './tailwind.css',   // Tailwind compilé (remplace l'ancien CDN cdn.tailwindcss.com)
