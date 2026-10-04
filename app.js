@@ -107,9 +107,11 @@ document.addEventListener('keydown',e=>{
 });
 // ==== Indicateur de synchronisation (pastille dans l'en-tête) ====
 function setSync(ok){const b=$('syncBadge');b.textContent=ok?'●':'●';b.title=ok?'Synchronisé':'Erreur de synchronisation';b.className='text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded-full whitespace-nowrap '+(ok?'text-emerald-300':'text-red-300')+' bg-white/20'}
+// "planning" a été retiré de NAV_GROUPS : ce n'est plus un menu déroulant,
+// c'est maintenant un bouton d'onglet direct (voir navPlanningGroup dans index.html),
+// câblé comme les autres via document.querySelectorAll('.tab-btn[data-tab]') plus bas.
 const NAV_GROUPS={
- bizplan:{btn:'navBizplanBtn',label:'navBizplanLabel',menu:'navBizplanMenu',def:"Plan d'affaires",tabs:{'bizplan':"Plan d'affaires",'excel':'Excel','rapport':'Rapport'}},
- planning:{btn:'navPlanningBtn',label:'navPlanningLabel',menu:'navPlanningMenu',def:'Planning',tabs:{'planning':'Planning'}}
+ bizplan:{btn:'navBizplanBtn',label:'navBizplanLabel',menu:'navBizplanMenu',def:"Plan d'affaires",tabs:{'bizplan':"Plan d'affaires",'excel':'Excel','rapport':'Rapport'}}
 };
 // ==== Navigation : barre d'onglets et bascule entre sections ====
 function moveTabIndicator(){
@@ -142,7 +144,7 @@ Object.values(NAV_GROUPS).forEach(g=>{
  $(g.btn).onclick=(e)=>{e.stopPropagation();const willOpen=$(g.menu).classList.contains('hidden');Object.values(NAV_GROUPS).forEach(o=>$(o.menu).classList.add('hidden'));if(willOpen)$(g.menu).classList.remove('hidden')};
 });
 document.querySelectorAll('.nav-group-item').forEach(b=>b.onclick=()=>openTab(b.dataset.tab));
-document.addEventListener('click',e=>{if(!e.target.closest('#navBizplanBtn')&&!e.target.closest('#navPlanningBtn')&&!e.target.closest('.nav-group-item')){Object.values(NAV_GROUPS).forEach(g=>$(g.menu).classList.add('hidden'))}});
+document.addEventListener('click',e=>{if(!e.target.closest('#navBizplanBtn')&&!e.target.closest('.nav-group-item')){Object.values(NAV_GROUPS).forEach(g=>$(g.menu).classList.add('hidden'))}});
 document.querySelectorAll('.tab-btn[data-tab]').forEach(b=>b.onclick=()=>openTab(b.dataset.tab));
 moveTabIndicator();
 requestAnimationFrame(()=>requestAnimationFrame(moveTabIndicator));
@@ -1839,7 +1841,7 @@ $('enablePushBtn').onclick=()=>{$('spaceActionsMenu').classList.add('hidden');en
 if('serviceWorker' in navigator){
  // ?v=SW_BUILD force le navigateur (et le CDN de GitHub Pages) à retélécharger sw.js
  // au lieu de servir une copie mise en cache : à incrémenter à chaque modification de sw.js.
- const SW_BUILD='10';
+ const SW_BUILD='11';
  window.addEventListener('load',()=>{
   navigator.serviceWorker.register('./sw.js?v='+SW_BUILD).then(reg=>{
    reg.addEventListener('updatefound',()=>{
