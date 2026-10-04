@@ -1042,7 +1042,7 @@ const STATUT_ORDER={en_cours:0,en_attente:1,termine:2,annule:3};
 // ==== Rendu principal : construit le HTML de chaque onglet à partir de `data` ====
 function proBar(id,table,val){return `<input class="pro-range w-full" style="--val:${val}%" type="range" min="0" max="100" value="${val}" onchange="progress('${table}','${id}',this.value)">`}
 function render(){
- const obj=data.objectifs,t=data.taches,p=data.projets,pl=data.planning,r=data.rappels,n=data.notes;
+ const obj=data.objectifs,t=data.taches,p=data.projets,pl=data.planning;
  if($('dashboardDateLabel'))$('dashboardDateLabel').textContent=new Date().toLocaleDateString('fr-CA',{weekday:'long',day:'numeric',month:'long'});
  $('countObj').textContent=obj.length;$('doneObj').textContent=`${obj.filter(x=>x.progression===100).length} terminé(s)`;
  $('countTask').textContent=t.filter(x=>!x.terminee&&x.statut!=='complete').length;$('doneTask').textContent=`${t.filter(x=>x.terminee||x.statut==='complete').length} terminée(s)`;
@@ -1120,9 +1120,10 @@ function render(){
 
  $('planningList').innerHTML=pl.length?pl.slice().sort((a,b)=>(a.date_planifiee+a.heure_debut).localeCompare(b.date_planifiee+b.heure_debut)).map(x=>`<div class="p-3 border rounded-xl dark:border-slate-700"><div class="flex justify-between"><h3 class="font-bold">${esc(x.titre)}</h3><span class="text-xs">${esc(x.statut)}</span></div><p class="text-sm text-slate-500"><svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="4.4" width="13.6" height="12" rx="1.4"/><path d="M3.2 8h13.6"/><path d="M7 3v2.8M13 3v2.8"/></svg> ${dateFr(x.date_planifiee)} ${x.heure_debut?'à '+x.heure_debut:''}${x.heure_fin?' – '+x.heure_fin:''}</p><p class="text-sm mt-1">${esc(x.description||'')}</p><div class="mt-3 text-sm"><button class="text-teal-600" onclick="showPlanning('${x.id}')">Modifier</button><button class="text-red-600 ml-3" onclick="remove('planning','${x.id}')">Supprimer</button></div></div>`).join(''):'<p class="text-slate-500">Aucun événement.</p>';
 
- $('reminderList').innerHTML=r.length?r.map(x=>`<div class="bg-[#F5F6F9] dark:bg-slate-900 rounded-xl shadow p-3"><div class="flex justify-between items-start gap-2"><h3 class="font-bold"><svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.6a4 4 0 0 0-4 4v2.1c0 .66-.24 1.3-.68 1.8l-.7.82c-.5.58-.1 1.48.66 1.48h9.44c.76 0 1.16-.9.66-1.48l-.7-.82a2.75 2.75 0 0 1-.68-1.8V7.6a4 4 0 0 0-4-4z"/><path d="M8.6 15.8a1.4 1.4 0 0 0 2.8 0"/></svg> ${esc(x.titre)}</h3><div class="flex gap-1 items-center"><span class="text-xs px-2 py-0.5 rounded-full ${x.priorite==='urgente'?'bg-red-100 text-red-700':x.priorite==='faible'?'bg-slate-100 text-slate-600':'bg-amber-100 text-amber-700'}">${esc(x.priorite||'moyenne')}</span><span class="text-xs ${x.is_active?'text-green-600':'text-slate-400'}">${x.is_active?'Actif':'Inactif'}</span></div></div><p class="text-sm text-slate-500 mt-2">${dateFr(x.date_rappel)} à ${esc(x.heure_rappel)} · ${esc(x.recurrence||'aucune')}</p><p class="text-sm mt-1">${esc(x.description||'')}</p><div class="mt-3 text-sm"><button class="text-teal-600" onclick="showReminder('${x.id}')">Modifier</button><button class="text-red-600 ml-3" onclick="remove('rappel','${x.id}')">Supprimer</button></div></div>`).join(''):'<p class="text-slate-500">Aucun rappel.</p>';
-
- $('noteList').innerHTML=n.length?n.map(x=>`<div class="bg-[#F5F6F9] dark:bg-slate-900 rounded-xl shadow p-3 ${x.epinglee?'ring-2 ring-indigo-400':''}"><div class="flex justify-between"><h3 class="font-bold"><svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.2 15.8l.3-2.4 8.1-8.1a1.3 1.3 0 0 1 1.9 0l.1.1a1.3 1.3 0 0 1 0 1.9l-8.1 8.1-2.3.4z"/><path d="M11.4 6.4l2 2"/></svg> ${esc(x.titre)}</h3>${x.epinglee?'<svg viewBox="0 0 20 20" class="inline-block w-3.5 h-3.5 align-[-2px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12L4 16M9 3.5l7.5 7.5-2.3 2.3-2-.7-3.2 3.2v-3.4l-3-3 3.2-3.2-.7-2z"/></svg>':''}</div><p class="whitespace-pre-wrap text-sm mt-3">${esc(x.contenu)}</p><div class="text-xs text-slate-500 mt-3">${(x.tags||[]).map(t=>'#'+esc(t)).join(' ')}</div><div class="mt-3 text-sm"><button class="text-teal-600" onclick="showNote('${x.id}')">Modifier</button><button class="text-red-600 ml-3" onclick="remove('notes','${x.id}')">Supprimer</button></div></div>`).join(''):'<p class="text-slate-500">Aucune note.</p>';
+ // Les onglets globaux "Rappels" et "Notes" ont été retirés : chaque projet a
+ // maintenant sa propre note (voir f_projnotes dans showProject()), donc on ne
+ // rend plus de listes reminderList/noteList ici (ces éléments n'existent plus
+ // dans index.html).
 
  $('dashProjectList').innerHTML=p.length?p.map(x=>{const rem=projectRemaining(x);return `<div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm"><div class="flex justify-between gap-2"><b class="truncate"><svg viewBox="0 0 20 20" class="inline-block w-4 h-4 align-[-3px]" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.2a1 1 0 0 1 1-1h3.3l1.4 1.7H16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6.2z"/></svg> ${esc(x.nom)}</b></div>${x.budget?`<div class="text-xs text-slate-500 mt-1">Restant : <span class="${rem<0?'text-red-600':'text-emerald-600'} font-medium">${money(rem)}</span></div>`:''}</div>`}).join(''):'<p class="text-slate-500 text-sm">Aucun projet.</p>';
  renderCharts();
@@ -1643,7 +1644,7 @@ function initViewMode(){applyViewMode(localStorage.getItem('organisateur_view')|
 $('viewToggle').onclick=()=>{const cur=localStorage.getItem('organisateur_view')||'grid';applyViewMode(cur==='grid'?'list':'grid')};
 initViewMode();
 
-$('addObj').onclick=()=>showObjective();$('addTask').onclick=()=>showTask();$('addProject').onclick=()=>showProject();$('addPlanning').onclick=()=>showPlanning();$('addReminder').onclick=()=>showReminder();$('addNote').onclick=()=>showNote();
+$('addObj').onclick=()=>showObjective();$('addTask').onclick=()=>showTask();$('addProject').onclick=()=>showProject();$('addPlanning').onclick=()=>showPlanning();
 function setTaskView(mode){
  localStorage.setItem('orbis_task_view',mode);
  $('taskListView').classList.toggle('hidden',mode!=='list');
@@ -1838,7 +1839,7 @@ $('enablePushBtn').onclick=()=>{$('spaceActionsMenu').classList.add('hidden');en
 if('serviceWorker' in navigator){
  // ?v=SW_BUILD force le navigateur (et le CDN de GitHub Pages) à retélécharger sw.js
  // au lieu de servir une copie mise en cache : à incrémenter à chaque modification de sw.js.
- const SW_BUILD='9';
+ const SW_BUILD='10';
  window.addEventListener('load',()=>{
   navigator.serviceWorker.register('./sw.js?v='+SW_BUILD).then(reg=>{
    reg.addEventListener('updatefound',()=>{
